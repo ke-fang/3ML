@@ -467,6 +467,17 @@ class TimeIntervalSet(object):
         return max(self.stop_times)
 
     @property
+    def half_time(self):
+        """
+        the half time of all the intervals
+
+        :return:
+        """
+
+        return (self.absolute_start_time + self.absolute_stop_time) / 2.
+
+
+    @property
     def time_edges(self):
         """
         return an array of time edges if contiguous
