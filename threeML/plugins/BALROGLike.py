@@ -38,9 +38,8 @@ class BALROGLike(FermiGBMTTELike):
 
                  # only on the start up
 
-                 mean_time = np.mean([self._min_interval_time, self._max_interval_time])
 
-                 self._rsp.set_time(mean_time)
+                 self._rsp.set_time(self._event_list.time_intervals.half_time)
 
 
 
@@ -62,10 +61,7 @@ class BALROGLike(FermiGBMTTELike):
         # this would require a lot of changes to BALROG so we ignore for now
 
         if not self._startup:
-
-            mean_time = np.mean([self._min_interval_time, self._max_interval_time])
-
-            self._rsp.set_time(mean_time)
+            self._rsp.set_time(self._event_list.time_intervals.half_time)
 
 
     def set_model(self, likelihoodModel):
