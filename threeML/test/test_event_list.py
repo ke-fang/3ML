@@ -1,4 +1,5 @@
 from threeML.plugins.OGIP.eventlist import EventListWithDeadTime, EventList
+from threeML.utils.time_interval import TimeIntervalSet
 
 import numpy as np
 import pytest
@@ -97,6 +98,8 @@ def test_event_list_constructor():
     assert evt_list._mission == 'UNKNOWN'
 
 
+
+
 def test_unbinned_fit():
     start, stop = 0, 50
 
@@ -118,13 +121,14 @@ def test_unbinned_fit():
 
     results = evt_list.get_poly_info()['coefficients']
 
-    # make sure it auto found the poly order
+    evt_list.set_active_time_intervals("0-1")
 
-    # assert len(poly) == results.shape[1]
+    assert evt_list.time_intervals == TimeIntervalSet.from_list_of_edges([0, 1])
 
-    #for r, v in zip(results.get_values()[0], poly):
+    assert evt_list._poly_counts.sum() > 0
 
-    #    assert is_within_tolerance(v, r, relative_tolerance=1.)
+    evt_list.__repr__()
+
 
 
 def test_binned_fit():
@@ -146,14 +150,15 @@ def test_binned_fit():
 
     evt_list.set_polynomial_fit_interval("%f-%f" % (start + 1, stop - 1), unbinned=False)
 
+    evt_list.set_active_time_intervals("0-1")
+
     results = evt_list.get_poly_info()['coefficients']
 
-    # make sure it auto found the poly order
+    assert evt_list.time_intervals == TimeIntervalSet.from_list_of_edges([0,1])
 
-    #assert len(poly) == results.shape[1]
 
-    for r, v in zip(results.get_values()[0], poly):
+    assert evt_list._poly_counts.sum() > 0
 
-        assert is_within_tolerance(v, r, relative_tolerance=1.)
+    evt_list.__repr__()
 
         ####
