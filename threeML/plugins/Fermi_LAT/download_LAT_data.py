@@ -14,7 +14,6 @@ from threeML.config.config import threeML_config
 from threeML.utils.unique_deterministic_tag import get_unique_deterministic_tag
 from threeML.io.download_from_http import ApacheDirectory
 
-
 # Set default timeout for operations
 socket.setdefaulttimeout(120)
 
@@ -333,7 +332,7 @@ def download_LAT_data(ra, dec, radius, tstart, tstop, time_type, data_type='Phot
 
         try:
 
-            _ = urllib.urlretrieve(http_address.replace("http","https"), fakeName, )
+            _ = urllib.urlretrieve(http_address.replace("http", "https"), fakeName, )
 
         except socket.timeout:
 

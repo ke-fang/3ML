@@ -153,9 +153,7 @@ class LikelihoodModelConverter(object):
 
 
 class FermiLATUnpickler(object):
-
     def __call__(self, name, eventFile, ft2File, livetimeCube, kind, exposureMap, likelihoodModel, innerMinimization):
-
         instance = FermiLATLike(name, eventFile, ft2File, livetimeCube, kind, exposureMap)
 
         instance.setInnerMinimization(innerMinimization)
@@ -167,7 +165,6 @@ class FermiLATUnpickler(object):
 
 
 class FermiLATLike(PluginPrototype):
-
     def __init__(self, name, eventFile, ft2File, livetimeCube, kind, exposureMap=None,
                  sourceMaps=None, binnedExpoMap=None):
 
@@ -396,6 +393,7 @@ class FermiLATLike(PluginPrototype):
         return value - logfactorial(self.like.total_nobs())
 
     pass
+
     #
     def __reduce__(self):
 

@@ -8,7 +8,6 @@ from threeML import BayesianAnalysis, Uniform_prior, Log_uniform_prior
 from threeML.analysis_results import MLEResults, load_analysis_results, AnalysisResultsSet
 from astromodels import Line, Gaussian
 
-
 _cache = {}
 
 # These are the same simulated dataset we use in the test of the XY plugin
@@ -20,11 +19,9 @@ poiss_sig = [44, 43, 38, 25, 51, 37, 46, 47, 55, 36, 40, 32, 46, 37, 44, 42, 50,
 
 
 def _get_mle_analysis_results():
-
     global _cache
 
     if 'ar' in _cache:
-
         return _cache['ar']
 
     y = np.array(poiss_sig)
@@ -41,7 +38,7 @@ def _get_mle_analysis_results():
     fitfun.mu_2.bounds = (0.0, 100.0)
     fitfun.sigma_2.bounds = (1e-3, 10.0)
 
-    model = Model(PointSource('fake',0.0, 0.0, fitfun))
+    model = Model(PointSource('fake', 0.0, 0.0, fitfun))
 
     data = DataList(xy)
 
@@ -57,11 +54,9 @@ def _get_mle_analysis_results():
 
 
 def _get_bayes_analysis_results():
-
     global _cache
 
     if 'arb' in _cache:
-
         return _cache['arb']
 
     y = np.array(poiss_sig)
@@ -78,7 +73,7 @@ def _get_bayes_analysis_results():
     fitfun.mu_2.bounds = (0.0, 100.0)
     fitfun.sigma_2.bounds = (1e-3, 10.0)
 
-    model = Model(PointSource('fake',0.0, 0.0, fitfun))
+    model = Model(PointSource('fake', 0.0, 0.0, fitfun))
 
     data = DataList(xy)
 
@@ -88,7 +83,6 @@ def _get_bayes_analysis_results():
     ar = _get_mle_analysis_results()
 
     for parameter in ar.optimized_model:
-
         model[parameter.path].value = parameter.value
 
     model.fake.spectrum.main.composite.a_1.set_uninformative_prior(Uniform_prior)
@@ -109,7 +103,6 @@ def _get_bayes_analysis_results():
 
 
 def _results_are_same(res1, res2, bayes=False):
-
     # Check that they are the same
 
     if not bayes:
@@ -141,10 +134,7 @@ def _results_are_same(res1, res2, bayes=False):
     assert np.allclose(s1.values, s2.values)
 
 
-
-
 def test_analysis_results_input_output():
-
     ar = _get_mle_analysis_results()  # type: MLEResults
 
     temp_file = "__test_mle.fits"
@@ -159,13 +149,12 @@ def test_analysis_results_input_output():
 
 
 def test_analysis_set_input_output():
-
     ar = _get_mle_analysis_results()
     ar2 = _get_mle_analysis_results()
 
     analysis_set = AnalysisResultsSet([ar, ar2])
 
-    analysis_set.set_bins("testing", [-1, 1], [3, 5], unit = 's')
+    analysis_set.set_bins("testing", [-1, 1], [3, 5], unit='s')
 
     temp_file = "_analysis_set_test"
 
@@ -179,12 +168,10 @@ def test_analysis_set_input_output():
     assert len(analysis_set_reloaded) == len(analysis_set)
 
     for res1, res2 in zip(analysis_set, analysis_set_reloaded):
-
         _results_are_same(res1, res2)
 
 
 def test_error_propagation():
-
     ar = _get_mle_analysis_results()
 
     # You can use the results for propagating errors non-linearly for analytical functions
@@ -222,7 +209,6 @@ def test_error_propagation():
             # Do not use more than 1000 values (would make computation too slow for nothing)
 
             if len(this_variate) > 1000:
-
                 this_variate = np.random.choice(this_variate, size=1000)
 
             arguments[this_name] = this_variate
@@ -242,7 +228,6 @@ def test_error_propagation():
 
 
 def test_bayesian_input_output():
-
     rb1 = _get_bayes_analysis_results()
 
     temp_file = "_test_bayes.fits"

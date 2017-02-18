@@ -25,7 +25,6 @@ def get_uncertainty_tokens(x):
 
 
 def _order_of_magnitude(value):
-
     return 10 ** np.floor(np.log10(abs(value)))
 
 
@@ -140,7 +139,6 @@ def uncertainty_formatter(value, low_bound, hi_bound):
 
 
 def _sign(number):
-
     if number < 0:
 
         return "-"

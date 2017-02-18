@@ -10,8 +10,6 @@ from threeML.io.calculate_flux import _setup_analysis_dictionaries, _collect_sum
 from threeML.io.plotting.cmap_cycle import cmap_intervals
 
 
-
-
 def plot_point_source_spectra(*analysis_results, **kwargs):
     """
 
@@ -63,14 +61,10 @@ def plot_point_source_spectra(*analysis_results, **kwargs):
 
                  }
 
-
-
     for key, value in kwargs.iteritems():
 
         if key in _defaults:
-
             _defaults[key] = value
-
 
     energy_range = np.logspace(np.log10(_defaults['ene_min']), np.log10(_defaults['ene_max']), _defaults['num_ene'])
 
@@ -104,8 +98,6 @@ def plot_point_source_spectra(*analysis_results, **kwargs):
         # go thru the mle analysis and plot spectra
 
         for key in mle_analyses.keys():
-
-
 
             # we won't assume to plot the total until the end
 
@@ -214,7 +206,6 @@ def plot_point_source_spectra(*analysis_results, **kwargs):
 
         for key in bayesian_analyses.keys():
 
-
             plot_total = False
 
             if _defaults['use_components']:
@@ -231,7 +222,6 @@ def plot_point_source_spectra(*analysis_results, **kwargs):
                     else:
 
                         best_fit = bayesian_analyses[key]['components'][component].median
-
 
                     positive_error = bayesian_analyses[key]['components'][component].upper_error
                     negative_error = bayesian_analyses[key]['components'][component].lower_error
@@ -275,7 +265,6 @@ def plot_point_source_spectra(*analysis_results, **kwargs):
 
                     best_fit = bayesian_analyses[key]['fitted point source'].median
 
-
                 positive_error = bayesian_analyses[key]['fitted point source'].upper_error
                 negative_error = bayesian_analyses[key]['fitted point source'].lower_error
 
@@ -314,17 +303,15 @@ def plot_point_source_spectra(*analysis_results, **kwargs):
         # sense to sum them together
 
         total_analysis_mle, component_sum_dict_mle, num_sources_to_plot = _collect_sums_into_dictionaries(mle_analyses,
-                                                                                                          _defaults['use_components'],
-                                                                                                          _defaults['components_to_use'])
-
-
-
+                                                                                                          _defaults[
+                                                                                                              'use_components'],
+                                                                                                          _defaults[
+                                                                                                              'components_to_use'])
 
         total_analysis_bayes, component_sum_dict_bayes, num_sources_to_plot_bayes = _collect_sums_into_dictionaries(
             bayesian_analyses,
             _defaults['use_components'],
             _defaults['components_to_use'])
-
 
         num_sources_to_plot += num_sources_to_plot_bayes
 
@@ -347,8 +334,6 @@ def plot_point_source_spectra(*analysis_results, **kwargs):
                 else:
 
                     best_fit = summed_analysis.median
-
-
 
                 positive_error = summed_analysis.upper_error
 
@@ -489,5 +474,3 @@ def plot_point_source_spectra(*analysis_results, **kwargs):
 
         ax.set_xlim(_defaults['ene_min'], _defaults['ene_max'])
         color_itr += 1
-
-

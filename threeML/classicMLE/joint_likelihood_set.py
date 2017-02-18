@@ -15,7 +15,6 @@ import pandas as pd
 
 
 class JointLikelihoodSet(object):
-
     def __init__(self, data_getter, model_getter, n_iterations, iteration_name='interval', preprocessor=None):
 
         # Store the data and model getter
@@ -130,7 +129,6 @@ class JointLikelihoodSet(object):
 
         # Apply preprocessor (if any)
         if self._preprocessor is not None:
-
             self._preprocessor(this_models, this_data)
 
         n_models = len(this_models)
@@ -278,7 +276,6 @@ class JointLikelihoodSet(object):
         self._all_results = []
 
         for i in range(self._n_models):
-
             this_model_results = map(lambda x: x[2][i], results)
 
             self._all_results.append(AnalysisResultsSet(this_model_results))
@@ -320,7 +317,6 @@ class JointLikelihoodSet(object):
 
         # Now write one file for each model
         for i in range(self._n_models):
-
             this_results = self._all_results[i]
 
             this_results.write_to(filenames[i], overwrite=overwrite)

@@ -156,8 +156,6 @@ def test_gbm_tte_constructor():
 
         nai3.set_background_interval("-15-0", "100-150", unbinned=False)
 
-
-
         # test that no background and no save raises assertion:
         with pytest.raises(AssertionError):
             nai3 = FermiGBMTTELike('NAI3',
@@ -168,13 +166,13 @@ def test_gbm_tte_constructor():
 
         nai3.display()
 
-        model = Model(PointSource('fake',0,0,Powerlaw()))
+        model = Model(PointSource('fake', 0, 0, Powerlaw()))
 
         nai3.set_model(model)
 
         sim = nai3.get_simulated_dataset()
 
-        assert isinstance(sim,OGIPLike)
+        assert isinstance(sim, OGIPLike)
 
         plot_tte_lightcurve(os.path.join(data_dir, "glg_tte_n3_bn080916009_v01.fit.gz"))
 

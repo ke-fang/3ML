@@ -1,4 +1,4 @@
-__author__='grburgess'
+__author__ = 'grburgess'
 
 import numpy as np
 import os
@@ -136,6 +136,7 @@ class EventList(object):
     def n_events(self):
 
         return self._arrival_times.shape[0]
+
     @property
     def arrival_times(self):
 
@@ -319,7 +320,7 @@ class EventList(object):
         """
 
         self._temporal_binner = TemporalBinner.bin_by_custom(start, stop)
-        #self._temporal_binner.bin_by_custom(start, stop)
+        # self._temporal_binner.bin_by_custom(start, stop)
 
     def bin_by_bayesian_blocks(self, start, stop, p0, use_background=False):
 
@@ -571,7 +572,6 @@ class EventList(object):
 
         """
 
-
         return self._output().to_string()
 
     def _output(self):
@@ -788,7 +788,7 @@ class EventList(object):
 
         polynomials = []
 
-        with progress_bar(self._n_channels, title="Fitting %s background"%self._instrument) as p:
+        with progress_bar(self._n_channels, title="Fitting %s background" % self._instrument) as p:
             for channel in channels:
                 channel_mask = total_poly_energies == channel
 
@@ -887,7 +887,7 @@ class EventList(object):
 
         polynomials = []
 
-        with progress_bar(self._n_channels, title="Fitting %s background"%self._instrument) as p:
+        with progress_bar(self._n_channels, title="Fitting %s background" % self._instrument) as p:
             for channel in channels:
                 channel_mask = total_poly_energies == channel
 
@@ -977,9 +977,10 @@ class EventList(object):
 
 
             store.get_storer('coefficients').attrs.metadata = {'poly_order': self._optimal_polynomial_grade,
-                                                               'poly_selections': zip(self._poly_intervals.start_times,self._poly_intervals.stop_times),
-                                                               'unbinned':self._unbinned,
-                                                               'fit_method':self._fit_method_info['fit method']}
+                                                               'poly_selections': zip(self._poly_intervals.start_times,
+                                                                                      self._poly_intervals.stop_times),
+                                                               'unbinned': self._unbinned,
+                                                               'fit_method': self._fit_method_info['fit method']}
 
         if self._verbose:
 

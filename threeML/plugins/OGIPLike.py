@@ -45,7 +45,6 @@ class OGIPLike(DispersionSpectrumLike):
         # PHA file, if needed
 
         if background is None:
-
             background = pha.background_file
 
             # assert background is not None, "No background file provided, and the PHA file does not specify one."

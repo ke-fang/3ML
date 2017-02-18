@@ -4,6 +4,7 @@ from threeML.plugins.OGIPLike import OGIPLike
 from threeML.utils.fitted_objects.fitted_point_sources import InvalidUnitError
 import itertools
 
+
 def make_simple_model():
     triggerName = 'bn090217206'
     ra = 204.9
@@ -22,13 +23,10 @@ def make_simple_model():
     powerlaw.index.prior = Uniform_prior(lower_bound=-5.0, upper_bound=5.0)
     powerlaw.K.prior = Log_uniform_prior(lower_bound=1.0, upper_bound=10)
 
-
-
     return model, data_list
 
 
 def make_componets_model():
-
     triggerName = 'bn090217206'
     ra = 204.9
     dec = -8.4
@@ -51,41 +49,36 @@ def make_componets_model():
 
     return model, data_list
 
+
 simple_model, simple_data = make_simple_model()
 
 complex_model, complex_data = make_componets_model()
 # prepare mle
 
 
-jl_simple = JointLikelihood(simple_model,simple_data)
+jl_simple = JointLikelihood(simple_model, simple_data)
 
 jl_simple.fit()
 
-jl_complex = JointLikelihood(complex_model,complex_data)
+jl_complex = JointLikelihood(complex_model, complex_data)
 
 jl_complex.fit()
 
-
 bayes_simple = BayesianAnalysis(simple_model, simple_data)
 
-bayes_simple.sample(10,10,20)
+bayes_simple.sample(10, 10, 20)
 
 bayes_complex = BayesianAnalysis(complex_model, complex_data)
 
+bayes_complex.sample(10, 10, 20)
 
-bayes_complex.sample(10,10,20)
+good_d_flux_units = ['1/(cm2 s keV)', 'erg/(cm2 s keV)', 'erg2/(cm2 s keV)']
 
-
-good_d_flux_units =['1/(cm2 s keV)', 'erg/(cm2 s keV)', 'erg2/(cm2 s keV)']
-
-good_i_flux_units =['1/(cm2 s )', 'erg/(cm2 s )', 'erg2/(cm2 s )']
-
+good_i_flux_units = ['1/(cm2 s )', 'erg/(cm2 s )', 'erg2/(cm2 s )']
 
 good_energy_units = ['keV', 'Hz', 'nm']
 
-
 bad_flux_units = ['g']
-
 
 analysis_to_test = [jl_simple.results,
                     jl_complex.results,
@@ -93,12 +86,7 @@ analysis_to_test = [jl_simple.results,
                     bayes_complex.results]
 
 
-
-
-
 def test_fitted_point_source_plotting():
-
-
     plot_keywords = {'use_components': True,
                      'components_to_use': ['Powerlaw', 'total'],
                      'sources_to_use': ['bn090217206'],
@@ -109,34 +97,28 @@ def test_fitted_point_source_plotting():
                      'legend_kwargs': {},
                      'ene_min': 10,
                      'ene_max': 100,
-                     'num_ene':5,
+                     'num_ene': 5,
                      'show_legend': False,
                      'fit_cmap': 'jet',
                      'countor_cmap': 'jet',
                      'sum_sources': True}
 
-
-    for u1, u2 in zip(good_d_flux_units,good_i_flux_units):
+    for u1, u2 in zip(good_d_flux_units, good_i_flux_units):
 
         for e_unit in good_energy_units:
 
             print u
 
             for x in analysis_to_test:
+                plot_point_source_spectra(x, flux_unit=u1, energy_unit=e_unit, num_ene=5)
 
-
-                plot_point_source_spectra(x,flux_unit=u1,energy_unit=e_unit,num_ene=5)
-
-                plot_point_source_spectra(x,**plot_keywords)
+                plot_point_source_spectra(x, **plot_keywords)
 
                 with pytest.raises(InvalidUnitError):
-                    plot_point_source_spectra(x,flux_unit=bad_flux_units[0])
-
+                    plot_point_source_spectra(x, flux_unit=bad_flux_units[0])
 
 
 def test_fitted_point_source_flux_calculations():
-
-
     flux_keywords = {'use_components': True,
                      'components_to_use': ['total', 'Powerlaw'],
                      'sources_to_use': ['bn090217206'],
@@ -144,9 +126,6 @@ def test_fitted_point_source_flux_calculations():
                      'energy_unit': 'keV',
                      'sum_sources': True}
 
-
-    calculate_point_source_flux(1,10,analysis_to_test[0],flux_unit=good_i_flux_units[0],energy_unit='keV')
+    calculate_point_source_flux(1, 10, analysis_to_test[0], flux_unit=good_i_flux_units[0], energy_unit='keV')
 
     calculate_point_source_flux(1, 10, analysis_to_test[-2], **flux_keywords)
-
-

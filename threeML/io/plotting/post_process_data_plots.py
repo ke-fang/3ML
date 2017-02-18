@@ -210,9 +210,6 @@ def display_spectrum_model_counts(analysis, data=(), **kwargs):
 
                 cnt_err = data._observed_count_errors
 
-
-
-
         # calculate all the correct quantites
 
         if data._background_noise_model is not None:

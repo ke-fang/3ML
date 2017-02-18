@@ -8,16 +8,13 @@ from threeML.minimizer.minimization import Minimizer
 
 
 class WrapperUnpickler(object):
-
     def __call__(self, dill_package, dim):
-
         function = dill.loads(dill_package)
 
         return PAGMOWrapper(function, dim=dim)
 
 
 class PAGMOWrapper(base):
-
     def __init__(self, function=None, parameters=None, dim=1):
 
         super(PAGMOWrapper, self).__init__(dim)
@@ -36,7 +33,6 @@ class PAGMOWrapper(base):
                 min_val, max_val = param.bounds
 
                 if min_val is None or max_val is None:
-
                     raise RuntimeError("In order to use the PAGMO minimizer, you have to provide a minimum and a "
                                        "maximum for all parameters in the model.")
 
@@ -67,7 +63,7 @@ class PAGMOWrapper(base):
 
         state = {'minima': self._minima, 'maxima': self._maxima}
 
-        return WrapperUnpickler(), (dill_package,self.__dim), state
+        return WrapperUnpickler(), (dill_package, self.__dim), state
 
     def __setstate__(self, state):
 
@@ -78,7 +74,6 @@ class PAGMOWrapper(base):
 
 
 class PAGMOMinimizer(Minimizer):
-
     def __init__(self, function, parameters, ftol=1e-3, verbosity=10):
 
         super(PAGMOMinimizer, self).__init__(function, parameters, ftol, verbosity)
@@ -136,10 +131,10 @@ class PAGMOMinimizer(Minimizer):
 
         return best_fit_values, final_value
 
+
 # This cannot be part of a class, unfortunately, because of how PyGMO serialize objects
 
 def evolve(function, parameters, algorithm, evolution_step=20, max_evolutions=1000, ftol=1e-3):
-
     Npar = len(parameters)
 
     functor = PAGMOWrapper(function=function, parameters=parameters, dim=Npar)

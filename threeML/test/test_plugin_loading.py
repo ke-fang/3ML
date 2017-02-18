@@ -26,8 +26,6 @@ __example_dir = os.path.join(__this_dir__, '../../examples')
 def test_loading_ogip():
 
     with within_directory(__this_dir__):
-
-
         ogip = OGIPLike('test_ogip', observation='test.pha{1}')
 
 

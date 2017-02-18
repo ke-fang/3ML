@@ -17,7 +17,6 @@ __instrument_name = "HAWC"
 
 
 class HAWCLike(PluginPrototype):
-
     def __new__(cls, *args, **kwargs):
 
         instance = object.__new__(cls)

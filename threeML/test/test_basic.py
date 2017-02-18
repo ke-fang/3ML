@@ -119,7 +119,6 @@ def test_a_basic_multicomp_analysis_from_start_to_finish():
 
     fig = bayes.corner_plot()
 
-
     mc = ModelComparison(bayes)
 
     mc.report()

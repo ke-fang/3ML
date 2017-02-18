@@ -1,8 +1,7 @@
-import collections
 
 
 from threeML.plugins.FermiGBMTTELike import FermiGBMTTELike
-import numpy as np
+
 
 from gbm_drm_gen import DRMGenTTE, BALROG_DRM
 
@@ -26,9 +25,9 @@ class BALROGLike(FermiGBMTTELike):
                  balrog_rsp = BALROG_DRM(drm_generator,0.,0.)
 
                  super(BALROGLike, self).__init__(name,
-                                                  tte_file,
-                                                  balrog_rsp,
-                                                  source_intervals,
+                                                  tte_file=tte_file,
+                                                  rsp_file=balrog_rsp,
+                                                  source_intervals=source_intervals,
                                                   background_selections=background_selections,
                                                   trigger_time=trigger_time,
                                                   poly_order=poly_order,
@@ -75,11 +74,7 @@ class BALROGLike(FermiGBMTTELike):
                 self._like_model.point_sources[key].position.ra.free = True
                 self._like_model.point_sources[key].position.dec.free = True
 
-
-
-
-
-    def get_folded_model(self):
+    def get_model(self):
 
 
         # Here we update the GBM drm parameters which creates and new DRM for that location
@@ -101,6 +96,4 @@ class BALROGLike(FermiGBMTTELike):
 
                 self._is_rsp_set = True
 
-
-
-        return super(BALROGLike, self).get_folded_model()
+        return super(BALROGLike, self).get_model()

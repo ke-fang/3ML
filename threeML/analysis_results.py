@@ -21,29 +21,23 @@ from threeML.io.uncertainty_formatter import uncertainty_formatter
 from threeML.version import __version__
 from threeML.random_variates import RandomVariates
 
-
 # These are special characters which cannot be safely saved in the keyword of a FITS file. We substitute
 # them with normal characters when we write the keyword, and we substitute them back when we read it back
 _subs = (('\n', "_NEWLINE_"), ("'", "_QUOTE1_"), ('"', "_QUOTE2_"), ('{', "_PARO_"), ('}', "_PARC_"))
 
 
 def _escape_yaml_for_fits(yaml_code):
-
     for sub in _subs:
-
         yaml_code = yaml_code.replace(sub[0], sub[1])
 
     return yaml_code
 
 
 def _escape_back_yaml_from_fits(yaml_code):
-
     for sub in _subs:
-
         yaml_code = yaml_code.replace(sub[1], sub[0])
 
     return yaml_code
-
 
 
 def load_analysis_results(fits_file):
@@ -68,7 +62,6 @@ def load_analysis_results(fits_file):
 
 
 def _load_one_results(fits_extension):
-
     # Gather analysis type
     analysis_type = fits_extension.header.get("RESUTYPE")
 
@@ -83,12 +76,11 @@ def _load_one_results(fits_extension):
 
     for key in fits_extension.header.keys():
 
-        if key.find("STAT")==0:
-
+        if key.find("STAT") == 0:
             # Found a keyword with a statistic for a plugin
             # Gather info about it
 
-            id = int(key.replace("STAT",""))
+            id = int(key.replace("STAT", ""))
             value = float(fits_extension.header.get(key))
             name = fits_extension.header.get("PN%i" % id)
             statistic_values[name] = value
@@ -114,13 +106,11 @@ def _load_one_results(fits_extension):
 
 
 def _load_set_of_results(open_fits_file, n_results):
-
     # Gather all results
     all_results = []
 
     for i in range(n_results):
-
-        all_results.append(_load_one_results(open_fits_file['ANALYSIS_RESULTS', i+1]))
+        all_results.append(_load_one_results(open_fits_file['ANALYSIS_RESULTS', i + 1]))
 
     this_set = AnalysisResultsSet(all_results)
 
@@ -165,7 +155,6 @@ class SEQUENCE(FITSExtension):
     ]
 
     def __init__(self, name, data_tuple):
-
         # Init FITS extension
 
         super(SEQUENCE, self).__init__(data_tuple, self._HEADER_KEYWORDS)
@@ -181,7 +170,6 @@ class ANALYSIS_RESULTS(FITSExtension):
     :param analysis_results:
     :type analysis_results: _AnalysisResults
     """
-
 
     _HEADER_KEYWORDS = [
         ('EXTNAME', 'ANALYSIS_RESULTS', 'Extension name'),
@@ -263,7 +251,6 @@ class ANALYSIS_RESULTS(FITSExtension):
         stat_series = analysis_results.optimal_statistic_values  # type: pd.Series
 
         for i, (plugin_instance_name, stat_value) in enumerate(stat_series.iteritems()):
-
             self.hdu.header.set("STAT%i" % i, stat_value, comment="Stat. value for plugin %i" % i)
             self.hdu.header.set("PN%i" % i, plugin_instance_name, comment="Name of plugin %i" % i)
 
@@ -281,7 +268,6 @@ class AnalysisResultsFITS(FITSFile):
         extensions = []
 
         if 'sequence_name' in kwargs:
-
             # This is a set of results
 
             assert 'sequence_tuple' in kwargs
@@ -299,8 +285,7 @@ class AnalysisResultsFITS(FITSFile):
 
         # Fix the EXTVER keyword (must be increasing among extensions with same name
         for i, res_ext in enumerate(results_ext):
-
-            res_ext.hdu.header.set("EXTVER", i+1)
+            res_ext.hdu.header.set("EXTVER", i + 1)
 
         extensions.extend(results_ext)
 
@@ -922,7 +907,6 @@ class AnalysisResultsSet(collections.Sequence):
         :return:
         """
 
-
         assert len(upper_bounds) == len(lower_bounds), "Upper and lower bounds must have the same length"
 
         assert len(upper_bounds) == len(self), "Wrong number of bounds (%i, should be %i)" % (len(upper_bounds),
@@ -958,7 +942,6 @@ class AnalysisResultsSet(collections.Sequence):
         self._sequence_name = str(name)
 
         for i, this_tuple in enumerate(data_tuple):
-
             assert len(this_tuple[1]) == len(self), "Column %i in tuple has length of " \
                                                     "%i (should be %i)" % (i, len(data_tuple), len(self))
 
@@ -974,7 +957,6 @@ class AnalysisResultsSet(collections.Sequence):
         """
 
         if not hasattr(self, "_sequence_name"):
-
             # The user didn't specify what this sequence is
 
             # Make the default sequence

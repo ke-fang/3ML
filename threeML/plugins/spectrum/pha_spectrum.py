@@ -2,7 +2,6 @@ import numpy as np
 import os
 import warnings
 
-
 from threeML.plugins.spectrum.binned_spectrum import BinnedSpectrumWithDispersion, Quality
 from threeML.plugins.OGIP.pha import PHAII
 from threeML.plugins.OGIP.response import OGIPResponse, InstrumentResponse
@@ -34,9 +33,9 @@ _might_be_columns['observed'] = ("EXPOSURE,BACKFILE," +
                                  "BACKSCAL").split(",")
 _might_be_columns['background'] = ("EXPOSURE,BACKSCAL").split(",")
 
-class PHASpectrum(BinnedSpectrumWithDispersion):
 
-    def __init__(self, pha_file_or_instance, spectrum_number=None, file_type='observed',rsp_file=None, arf_file=None):
+class PHASpectrum(BinnedSpectrumWithDispersion):
+    def __init__(self, pha_file_or_instance, spectrum_number=None, file_type='observed', rsp_file=None, arf_file=None):
         """
         A spectrum with dispersion build from an OGIP-compliant PHA FITS file. Both Type I & II files can be read. Type II
         spectra are selected either by specifying the spectrum_number or via the {spectrum_number} file name convention used
@@ -58,8 +57,6 @@ class PHASpectrum(BinnedSpectrumWithDispersion):
         assert isinstance(pha_file_or_instance, str) or isinstance(pha_file_or_instance,
                                                                    PHAII), 'Must provide a FITS file name or PHAII instance'
 
-
-
         if isinstance(pha_file_or_instance, str):
 
             ext = os.path.splitext(pha_file_or_instance)[-1]
@@ -72,8 +69,6 @@ class PHASpectrum(BinnedSpectrumWithDispersion):
             # Read the data
 
             filename = pha_file_or_instance
-
-
 
             # create a FITS_FILE instance
 
@@ -106,10 +101,9 @@ class PHASpectrum(BinnedSpectrumWithDispersion):
 
             raise RuntimeError("The input file %s is not in PHA format" % (pha_file_or_instance))
 
-        #spectrum_number = spectrum_number
+        # spectrum_number = spectrum_number
 
         spectrum = pha_file_or_instance[HDUidx]
-
 
         data = spectrum.data
         header = spectrum.header
@@ -248,7 +242,6 @@ class PHASpectrum(BinnedSpectrumWithDispersion):
                     raise RuntimeError("Keyword %s not found. File %s is not a proper PHA "
                                        "file" % (keyname, filename))
 
-
         is_poisson = gathered_keywords['poisserr']
 
         exposure = gathered_keywords['exposure']
@@ -262,8 +255,7 @@ class PHASpectrum(BinnedSpectrumWithDispersion):
                 # this means it should be specified in the header
                 rsp_file = gathered_keywords['respfile']
 
-                if arf_file is  None:
-
+                if arf_file is None:
                     arf_file = gathered_keywords['ancrfile']
 
                     # Read in the response
@@ -276,17 +268,13 @@ class PHASpectrum(BinnedSpectrumWithDispersion):
                 # assume a fully formed OGIPResponse
                 rsp = rsp_file
 
-
-
-
         if file_type == 'background':
-
             # we need the rsp ebounds from response to build the histogram
 
-            assert isinstance(rsp_file,InstrumentResponse), 'You must supply and OGIPResponse to extract the energy bounds'
+            assert isinstance(rsp_file,
+                              InstrumentResponse), 'You must supply and OGIPResponse to extract the energy bounds'
 
             rsp = rsp_file
-
 
         # Now get the data (counts or rates) and their errors. If counts, transform them in rates
 
@@ -375,10 +363,9 @@ class PHASpectrum(BinnedSpectrumWithDispersion):
                 "The data column (RATES or COUNTS) has a different number of entries than the " \
                 "DETCHANS declared in the header"
 
-
         quality = Quality.from_ogip(quality)
 
-        counts = rates*exposure
+        counts = rates * exposure
 
         if not is_poisson:
 
@@ -423,8 +410,7 @@ class PHASpectrum(BinnedSpectrumWithDispersion):
 
             return None
 
-
-    def set_ogip_grouping(self,grouping):
+    def set_ogip_grouping(self, grouping):
         """
         If the counts are rebinned, this updates the grouping
         :param grouping:
@@ -496,13 +482,12 @@ p
             new_counts = self.counts
             new_count_errors = self.count_errors
 
-
         if new_count_errors is None:
             stat_err = None
 
         else:
 
-            stat_err = new_count_errors/self.exposure
+            stat_err = new_count_errors / self.exposure
 
         # create a new PHAII instance
 
@@ -510,8 +495,8 @@ p
                     telescope_name=self.mission,
                     tstart=0,
                     telapse=self.exposure,
-                    channel=range(1,len(self)+1),
-                    rate=new_counts/self.exposure,
+                    channel=range(1, len(self) + 1),
+                    rate=new_counts / self.exposure,
                     stat_err=stat_err,
                     quality=self.quality.to_ogip(),
                     grouping=self.grouping,
@@ -520,7 +505,6 @@ p
                     respfile=None,
                     ancrfile=None,
                     is_poisson=self.is_poisson)
-
 
         return pha
 

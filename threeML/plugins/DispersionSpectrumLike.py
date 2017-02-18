@@ -5,22 +5,19 @@ from threeML.plugins.SpectrumLike import SpectrumLike
 from threeML.plugins.spectrum.binned_spectrum import BinnedSpectrumWithDispersion
 from threeML.plugins.OGIP.response import InstrumentResponse
 
-
 __instrument_name = "General binned spectral data with energy dispersion"
+
 
 class DispersionSpectrumLike(SpectrumLike):
     def __init__(self, name, observation, background=None, verbose=True):
-
-
-        assert isinstance(observation, BinnedSpectrumWithDispersion), "observed spectrum is not an instance of BinnedSpectrumWithDispersion"
+        assert isinstance(observation,
+                          BinnedSpectrumWithDispersion), "observed spectrum is not an instance of BinnedSpectrumWithDispersion"
 
         assert observation.response is not None, "the observed spectrum does not have a response"
 
         # assign the response to the plugins
 
-        self._rsp = observation.response #type: InstrumentResponse
-
-
+        self._rsp = observation.response  # type: InstrumentResponse
 
         super(DispersionSpectrumLike, self).__init__(name=name,
                                                      observation=observation,
@@ -56,7 +53,7 @@ class DispersionSpectrumLike(SpectrumLike):
 
         return self._rsp.convolve()
 
-    def get_simulated_dataset(self, new_name=None,**kwargs):
+    def get_simulated_dataset(self, new_name=None, **kwargs):
         """
         Returns another DispersionSpectrumLike instance where data have been obtained by randomizing the current expectation from the
         model, as well as from the background (depending on the respective noise models)
@@ -92,10 +89,9 @@ class DispersionSpectrumLike(SpectrumLike):
     def _output(self):
         # type: () -> pd.Series
 
-        super_out = super(DispersionSpectrumLike, self)._output() #type: pd.Series
+        super_out = super(DispersionSpectrumLike, self)._output()  # type: pd.Series
 
-        the_df = pd.Series({'response':self._rsp.rsp_filename})
-
+        the_df = pd.Series({'response': self._rsp.rsp_filename})
 
         return super_out.append(the_df)
 

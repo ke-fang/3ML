@@ -5,12 +5,11 @@ from threeML.utils.histogram import Histogram
 from threeML.plugins.OGIP.likelihood_functions import poisson_log_likelihood_ideal_bkg
 from threeML.plugins.OGIP.likelihood_functions import chi2
 
-
 __instrument_name = "n.a."
 
-class HistLike(XYLike):
 
-    def __init__(self,name, histogram):
+class HistLike(XYLike):
+    def __init__(self, name, histogram):
         """
         Fit a 3ML Histogram such that the model is evaluated its integral over the histogram bins
 
@@ -18,18 +17,15 @@ class HistLike(XYLike):
         :param histogram: 3ML histogram
         """
 
+        assert isinstance(histogram, Histogram), "input must be a 3ML histogram"
 
-        assert isinstance(histogram,Histogram), "input must be a 3ML histogram"
-
-        self._histogram = histogram #type: Histogram
-
+        self._histogram = histogram  # type: Histogram
 
         super(HistLike, self).__init__(name=name,
                                        x=self._histogram.mid_points,
                                        y=self._histogram.contents,
                                        yerr=self._histogram.errors,
                                        poisson_data=self._histogram.is_poisson)
-
 
     def _get_diff_flux_and_integral(self):
 
@@ -93,12 +89,9 @@ class HistLike(XYLike):
 
         _, integral_function = self._get_diff_flux_and_integral()
 
-
         model = np.array([integral_function(xmin, xmax) for xmin, xmax in self._histogram.bin_stack])
 
         return model
-
-
 
     @property
     def histogram(self):

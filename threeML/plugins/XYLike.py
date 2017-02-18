@@ -47,7 +47,7 @@ class XYLike(PluginPrototype):
             # JM: I'm leaving the possibility to do an unweighted fit... we can remove if this is a
             #     a bad idea
 
-            #assert poisson_data, "You did not provide errors and you did not set poisson_error to True."
+            # assert poisson_data, "You did not provide errors and you did not set poisson_error to True."
 
             self._yerr = np.ones_like(self._y)
 
@@ -64,7 +64,6 @@ class XYLike(PluginPrototype):
             self._is_poisson = True
             self._yerr = None
             self._has_errors = True
-
 
     @property
     def is_poisson(self):

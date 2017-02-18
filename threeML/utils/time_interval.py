@@ -1,10 +1,7 @@
 from threeML.utils.interval import Interval, IntervalSet
 
 
-
-
 class TimeInterval(Interval):
-
     def __add__(self, number):
         """
         Return a new time interval equal to the original time interval shifted to the right by number
@@ -27,29 +24,23 @@ class TimeInterval(Interval):
 
     @property
     def duration(self):
-
         return super(TimeInterval, self)._get_width()
 
     @property
     def start_time(self):
-
         return self._start
 
     @property
     def stop_time(self):
-
         return self._stop
 
     @property
     def half_time(self):
-
         return self.mid_point
 
     def __repr__(self):
 
         return "time interval %s - %s (duration: %s)" % (self.start_time, self.stop_time, self.duration)
-
-
 
 
 class TimeIntervalSet(IntervalSet):

@@ -71,7 +71,7 @@ def sqrt_sum_of_squares(arg):
     :return: the sqrt of the sum of the squares
     """
 
-    return np.sqrt( np.square(arg).sum() )
+    return np.sqrt(np.square(arg).sum())
 
 
 

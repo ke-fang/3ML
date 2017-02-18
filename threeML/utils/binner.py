@@ -250,7 +250,6 @@ class Rebinner(object):
         #     return np.array(self._edges[:-1]) + 1, np.array(self._edges[1:])
 
 
-
 class TemporalBinner(TimeIntervalSet):
     """
     An extension of the TimeInterval set that includes binning capabilities
@@ -258,7 +257,8 @@ class TemporalBinner(TimeIntervalSet):
     """
 
     @classmethod
-    def bin_by_significance(cls, arrival_times, background_getter, background_error_getter=None, sigma_level=10, min_counts=1, tstart=None, tstop=None):
+    def bin_by_significance(cls, arrival_times, background_getter, background_error_getter=None, sigma_level=10,
+                            min_counts=1, tstart=None, tstop=None):
         """
 
         Bin the data to a given significance level for a given background method and sigma
@@ -272,8 +272,6 @@ class TemporalBinner(TimeIntervalSet):
 
         :return:
         """
-
-
 
         if tstart is None:
 
@@ -314,15 +312,15 @@ class TemporalBinner(TimeIntervalSet):
 
         # first we need to see if the interval provided has enough counts
 
-        _, counts = TemporalBinner._select_events(arrival_times,current_start, arrival_times[-1])
+        _, counts = TemporalBinner._select_events(arrival_times, current_start, arrival_times[-1])
 
         # if it does not, the flag for the big loop never gets set
         end_all_search = not TemporalBinner._check_exceeds_sigma_interval(current_start,
-                                                                arrival_times[-1],
-                                                                counts,
-                                                                sigma_level,
-                                                                background_getter,
-                                                                background_error_getter)
+                                                                          arrival_times[-1],
+                                                                          counts,
+                                                                          sigma_level,
+                                                                          background_getter,
+                                                                          background_error_getter)
 
         # We will start the search at the mid point of the whole interval
 
@@ -351,14 +349,14 @@ class TemporalBinner(TimeIntervalSet):
                 while (not end_fast_search):
 
                     # we calculate the sigma of the current region
-                    _, counts = TemporalBinner._select_events(arrival_times,current_start, current_stop)
+                    _, counts = TemporalBinner._select_events(arrival_times, current_start, current_stop)
 
                     sigma_exceeded = TemporalBinner._check_exceeds_sigma_interval(current_start,
-                                                                        current_stop,
-                                                                        counts,
-                                                                        sigma_level,
-                                                                        background_getter,
-                                                                        background_error_getter)
+                                                                                  current_stop,
+                                                                                  counts,
+                                                                                  sigma_level,
+                                                                                  background_getter,
+                                                                                  background_error_getter)
 
                     time_step = abs(current_stop - current_start)
 
@@ -466,9 +464,6 @@ class TemporalBinner(TimeIntervalSet):
                     # so lets kill the main search
                     end_all_search = True
 
-
-
-
         if not starts:
 
             print("The requested sigma level could not be achieved in the interval. Try decreasing it.")
@@ -525,8 +520,7 @@ class TemporalBinner(TimeIntervalSet):
         starts = np.asarray(final_edges)[:-1]
         stops = np.asarray(final_edges)[1:]
 
-        return  cls.from_starts_and_stops(starts, stops)
-
+        return cls.from_starts_and_stops(starts, stops)
 
     @classmethod
     def bin_by_custom(cls, starts, stops):
@@ -538,7 +532,6 @@ class TemporalBinner(TimeIntervalSet):
         :param stop:  stop times of the bins
         :return:
         """
-
 
         return cls.from_starts_and_stops(starts, stops)
 
@@ -586,7 +579,7 @@ class TemporalBinner(TimeIntervalSet):
             return False
 
     @staticmethod
-    def _select_events(arrival_times, start, stop ):
+    def _select_events(arrival_times, start, stop):
         """
         get the events and total counts over an interval
 

@@ -93,13 +93,11 @@ def test_loading_a_generic_pha_file():
 
 def test_pha_files_in_generic_ogip_constructor_spec_number_in_file_name():
     with within_directory(__this_dir__):
-
         ogip = OGIPLike('test_ogip', observation='test.pha{1}')
         ogip.set_active_measurements('all')
         pha_info = ogip.get_pha_files()
 
         for key in ['pha', 'bak']:
-
             assert isinstance(pha_info[key], PHASpectrum)
 
         assert pha_info['pha'].background_file == 'test_bak.pha{1}'
@@ -168,7 +166,6 @@ def test_pha_files_in_generic_ogip_constructor_spec_number_in_arguments():
         pha_info = ogip.get_pha_files()
 
         for key in ['pha', 'bak']:
-
             assert isinstance(pha_info[key], PHASpectrum)
 
         assert pha_info['pha'].background_file == 'test_bak.pha{1}'
@@ -318,7 +315,6 @@ def test_various_effective_area():
 
 def test_simulating_data_sets():
     with within_directory(__this_dir__):
-
         ogip = OGIPLike('test_ogip', observation='test.pha{1}')
 
         with pytest.raises(AssertionError):
@@ -377,7 +373,6 @@ def test_simulating_data_sets():
 
 def test_likelihood_ratio_test():
     with within_directory(__this_dir__):
-
         ogip = OGIPLike('test_ogip', observation='test.pha{1}')
 
         ogip.set_active_measurements("all")
@@ -471,7 +466,6 @@ def test_swift_gbm():
 
 def test_pha_write():
     with within_directory(__this_dir__):
-
         ogip = OGIPLike('test_ogip', observation='test.pha{1}')
 
         ogip.write_pha('test_write', overwrite=True)
@@ -481,7 +475,6 @@ def test_pha_write():
         pha_info = written_ogip.get_pha_files()
 
         for key in ['pha', 'bak']:
-
             assert isinstance(pha_info[key], PHASpectrum)
 
         assert pha_info['pha'].background_file == 'test_bak.pha{1}'

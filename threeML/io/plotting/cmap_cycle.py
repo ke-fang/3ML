@@ -3,26 +3,26 @@ __author__ = "grburgess"
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 # reverse these colormaps so that it goes from light to dark
 
 REVERSE_CMAP = ['summer', 'autumn', 'winter', 'spring', 'copper']
 
 # clip some colormaps so the colors aren't too light
 
-CMAP_RANGE = dict(gray={'start':200, 'stop':0},
-                  Blues={'start':60, 'stop':255},
-                  Oranges={'start':100, 'stop':255},
-                  OrRd={'start':60, 'stop':255},
-                  BuGn={'start':60, 'stop':255},
-                  PuRd={'start':60, 'stop':255},
-                  YlGn={'start':60, 'stop':255},
-                  YlGnBu={'start':60, 'stop':255},
-                  YlOrBr={'start':60, 'stop':255},
-                  YlOrRd={'start':60, 'stop':255},
-                  hot={'start':230, 'stop':0},
-                  bone={'start':200, 'stop':0},
-                  pink={'start':160, 'stop':0})
+CMAP_RANGE = dict(gray={'start': 200, 'stop': 0},
+                  Blues={'start': 60, 'stop': 255},
+                  Oranges={'start': 100, 'stop': 255},
+                  OrRd={'start': 60, 'stop': 255},
+                  BuGn={'start': 60, 'stop': 255},
+                  PuRd={'start': 60, 'stop': 255},
+                  YlGn={'start': 60, 'stop': 255},
+                  YlGnBu={'start': 60, 'stop': 255},
+                  YlOrBr={'start': 60, 'stop': 255},
+                  YlOrRd={'start': 60, 'stop': 255},
+                  hot={'start': 230, 'stop': 0},
+                  bone={'start': 200, 'stop': 0},
+                  pink={'start': 160, 'stop': 0})
+
 
 def cmap_intervals(length=50, cmap='YlOrBr', start=None, stop=None):
     """
@@ -48,7 +48,5 @@ def cmap_intervals(length=50, cmap='YlOrBr', start=None, stop=None):
     if stop is not None:
         crange['stop'] = stop
 
-
     idx = np.linspace(crange['start'], crange['stop'], length).astype(np.int)
     return cm(idx)
-

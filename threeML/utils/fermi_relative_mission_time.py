@@ -33,8 +33,6 @@ def compute_fermi_relative_mission_times(trigger_time):
             timesys_out="u",
             apply_clock_offset="yes")
 
-
-
     if internet_connection_is_active():
 
         content = requests.get(xtime_url, params=args).content
@@ -48,8 +46,6 @@ def compute_fermi_relative_mission_times(trigger_time):
         mission_dict[mission_info[16][1]] = mission_info[16][2]  # SUZAKU
         mission_dict[mission_info[20][1]] = mission_info[20][2]  # SWIFT
         mission_dict[mission_info[24][1]] = mission_info[24][2]  # CHANDRA
-
-
 
         return mission_dict
 

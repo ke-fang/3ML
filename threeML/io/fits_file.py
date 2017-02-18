@@ -78,7 +78,6 @@ class FITSFile(object):
     def writeto(self, *args, **kwargs):
 
         if 'overwrite' in kwargs:
-
             # For some reason HDUList has clobber, not overwrite. If we got that keyword,
             # substitute it
 

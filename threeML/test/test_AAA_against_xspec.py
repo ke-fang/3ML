@@ -20,13 +20,11 @@ from astromodels import Powerlaw
 from threeML.io.package_data import get_path_of_data_file
 from threeML.plugins.OGIP.response import InstrumentResponse, OGIPResponse
 
-
 skip_if_pyxspec_is_not_available = pytest.mark.skipif(not has_pyxspec,
-                                                       reason="No pyXspec installed")
+                                                      reason="No pyXspec installed")
 
 
 def get_matrix_elements():
-
     # In[5]: np.diagflat([1, 2, 3, 4])[:3, :]
 
     matrix = np.diagflat([1.0, 2.0, 3.0, 4.0])[:3, :]
@@ -43,15 +41,12 @@ def get_matrix_elements():
     return matrix, mc_energies, ebounds
 
 
-
 @skip_if_pyxspec_is_not_available
 def test_OGIP_response_against_xspec():
-
     # Test for various photon indexes
     for index in np.linspace(-2.0, 2.0, 10):
 
         if index == 1.0:
-
             # This would make the integral of the power law different, so let's just
             # skip it
 
@@ -142,7 +137,6 @@ def test_OGIP_response_against_xspec():
 
 @skip_if_pyxspec_is_not_available
 def test_response_against_xspec():
-
     # Make a response and write to a FITS OGIP file
     matrix, mc_energies, ebounds = get_matrix_elements()
 
@@ -157,7 +151,6 @@ def test_response_against_xspec():
     for index in np.linspace(-2.0, 2.0, 10):
 
         if index == 1.0:
-
             # This would make the integral of the power law different, so let's just
             # skip it
 

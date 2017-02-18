@@ -245,7 +245,6 @@ class BayesianAnalysis(object):
 
         # Display results
         if not quiet:
-
             self._results.display()
 
         return self.samples
@@ -413,7 +412,6 @@ class BayesianAnalysis(object):
 
         # Sets the values of the parameters to their MAP values
         for i, parameter in enumerate(self._free_parameters):
-
             self._free_parameters[parameter].value = approximate_MAP_point[i]
 
         # Get the value of the posterior for each dataset at the MAP
@@ -422,7 +420,6 @@ class BayesianAnalysis(object):
         log_prior = self._log_prior(approximate_MAP_point)
 
         for dataset in self.data_list.values():
-
             log_posteriors[dataset.name] = dataset.get_log_like() + log_prior
 
         # Instance the result
@@ -1036,7 +1033,7 @@ class BayesianAnalysis(object):
 
         log_prior = 0
 
-        #with use_
+        # with use_
 
         for i, (parameter_name, parameter) in enumerate(self._free_parameters.iteritems()):
 

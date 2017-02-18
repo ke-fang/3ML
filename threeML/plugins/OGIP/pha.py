@@ -42,8 +42,6 @@ class PHAWrite(object):
         self._mission = {'pha': [], 'bak': []}
         self._instrument = {'pha': [], 'bak': []}
 
-
-
         # If the PHAs have existing background files
         # then it is assumed that we will not need to write them
         # out. THe most likely case is that the background file does not
@@ -272,22 +270,20 @@ class PHAWrite(object):
 
             fits_file.writeto(self._outfile_name[key], overwrite=overwrite)
 
-
         if self._out_rsp:
 
             # add the various responses needed
 
             extensions = [EBOUNDS(self._out_rsp[0].ebounds)]
 
-            extensions.extend([SPECRESP_MATRIX(this_rsp.monte_carlo_energies, this_rsp.ebounds, this_rsp.matrix) for this_rsp in self._out_rsp])
+            extensions.extend(
+                [SPECRESP_MATRIX(this_rsp.monte_carlo_energies, this_rsp.ebounds, this_rsp.matrix) for this_rsp in
+                 self._out_rsp])
 
             for ext in extensions[1:]:
-
-
                 # Set telescope and instrument name
                 ext.hdu.header.set("TELESCOP", self._mission['pha'])
                 ext.hdu.header.set("INSTRUME", self._instrument['pha'])
-
 
             rsp2 = FITSFile(fits_extensions=extensions)
 
@@ -373,16 +369,16 @@ class SPECTRUM(FITSExtension):
         n_spectra = len(tstart)
 
         data_list = [('TSTART', tstart),
-                      ('TELAPSE', telapse),
-                      ('SPEC_NUM',np.arange(1, n_spectra + 1, dtype=np.int32)),
-                      ('CHANNEL', channel),
-                      ('RATE',rate),
-                      ('QUALITY',quality),
-                      ('BACKSCAL', backscale),
-                      ('GROUPING',grouping),
-                      ('EXPOSURE',exposure),
-                      ('RESPFILE',respfile),
-                      ('ANCRFILE',ancrfile)]
+                     ('TELAPSE', telapse),
+                     ('SPEC_NUM',np.arange(1, n_spectra + 1, dtype=np.int32)),
+                     ('CHANNEL', channel),
+                     ('RATE',rate),
+                     ('QUALITY',quality),
+                     ('BACKSCAL', backscale),
+                     ('GROUPING',grouping),
+                     ('EXPOSURE',exposure),
+                     ('RESPFILE',respfile),
+                     ('ANCRFILE',ancrfile)]
 
 
         if back_file is not None:
@@ -391,7 +387,6 @@ class SPECTRUM(FITSExtension):
 
 
         if stat_err is not None:
-
             assert is_poisson == False, "Tying to enter STAT_ERR error but have POISSERR set true"
 
             data_list.append(('STAT_ERR', stat_err))
@@ -409,7 +404,7 @@ class PHAII(FITSFile):
 
 
     def __init__(self, instrument_name, telescope_name, tstart, telapse, channel, rate, quality, grouping, exposure, backscale, respfile,
-                 ancrfile, back_file=None, sys_err=None, stat_err=None,is_poisson=False):
+                 ancrfile, back_file=None, sys_err=None, stat_err=None, is_poisson=False):
 
 
         """
@@ -495,8 +490,6 @@ class PHAII(FITSFile):
         spectrum_extension.hdu.header.set("INSTRUME", instrument_name)
         spectrum_extension.hdu.header.set("DETCHANS", len(self._channel[0]))
 
-
-
         super(PHAII, self).__init__(fits_extensions=[spectrum_extension])
 
 
@@ -510,10 +503,7 @@ class PHAII(FITSFile):
         is_poisson = True
 
         if use_poly:
-
-            is_poisson=False
-
-
+            is_poisson = False
 
         return PHAII(instrument_name=pha_information['instrument'],
                      telescope_name=pha_information['telescope'],

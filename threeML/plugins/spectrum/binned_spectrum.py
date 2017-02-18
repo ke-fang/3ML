@@ -6,16 +6,14 @@ from threeML.utils.interval import Interval, IntervalSet
 from threeML.plugins.OGIP.response import InstrumentResponse
 from threeML.utils.stats_tools import sqrt_sum_of_squares
 
-class Channel(Interval):
 
+class Channel(Interval):
     @property
     def channel_width(self):
-
         return self._get_width()
 
 
 class ChannelSet(IntervalSet):
-
     INTERVAL_TYPE = Channel
 
     @classmethod
@@ -28,15 +26,14 @@ class ChannelSet(IntervalSet):
         :return:
         """
 
-
         new_ebounds = cls.from_list_of_edges(instrument_response.ebounds)
 
         return new_ebounds
 
     @property
     def channels_widths(self):
+        return np.array([channel.channel_width for channel in self._intervals])
 
-        return np.array([channel.channel_width for channel in self._intervals ])
 
 class Quality(object):
     def __init__(self, quality):
@@ -49,9 +46,9 @@ class Quality(object):
 
         good = quality == 'good'
         warn = quality == 'warn'
-        bad  = quality == 'bad'
+        bad = quality == 'bad'
 
-        assert total_length == sum(good) + sum(warn) +sum(bad), 'quality can only contain "good", "warn", and "bad"'
+        assert total_length == sum(good) + sum(warn) + sum(bad), 'quality can only contain "good", "warn", and "bad"'
 
         self._good = good
         self._warn = warn
@@ -60,7 +57,6 @@ class Quality(object):
         self._quality = quality
 
     def __len__(self):
-
         return len(self._quality)
 
     @property
@@ -87,7 +83,7 @@ class Quality(object):
 
         quality = np.array(['good' for i in xrange(len(ogip_quality))])
 
-        #quality[good] = 'good'
+        # quality[good] = 'good'
         quality[warn] = 'warn'
         quality[bad] = 'bad'
 
@@ -103,7 +99,7 @@ class Quality(object):
         :return:
         """
 
-        ogip_quality = np.zeros(self._quality.shape,dtype=np.int32)
+        ogip_quality = np.zeros(self._quality.shape, dtype=np.int32)
 
         ogip_quality[self.warn] = 2
         ogip_quality[self.bad] = 5
@@ -123,12 +119,11 @@ class Quality(object):
         return cls(quality)
 
 
-
 class BinnedSpectrum(Histogram):
-
     INTERVAL_TYPE = Channel
 
-    def __init__(self, counts, exposure, ebounds, count_errors=None, sys_errors=None, quality=None, scale_factor=1., is_poisson=False, mission=None, instrument=None):
+    def __init__(self, counts, exposure, ebounds, count_errors=None, sys_errors=None, quality=None, scale_factor=1.,
+                 is_poisson=False, mission=None, instrument=None):
         """
         A general binned histogram of either Poisson or non-Poisson rates. While the input is in counts, 3ML spectra work
         in rates, so this class uses the exposure to construct the rates from the counts.
@@ -156,10 +151,9 @@ class BinnedSpectrum(Histogram):
         # if we do not have a ChannelSet,
 
         if not isinstance(ebounds, ChannelSet):
-
             # make one from the edges
 
-            ebounds = ChannelSet.from_list_of_edges(ebounds) #type: ChannelSet
+            ebounds = ChannelSet.from_list_of_edges(ebounds)  #type: ChannelSet
 
 
         if count_errors is not None:
@@ -175,7 +169,6 @@ class BinnedSpectrum(Histogram):
             rate_errors = None
 
         if sys_errors is None:
-
             sys_errors = np.zeros_like(counts)
 
         self._sys_errors = sys_errors
@@ -183,7 +176,6 @@ class BinnedSpectrum(Histogram):
         # convert rates to counts
 
         rates = counts / self._exposure
-
 
         if quality is not None:
 
@@ -198,7 +190,6 @@ class BinnedSpectrum(Histogram):
             # if there is no quality, then assume all channels are good
 
             self._quality = Quality.create_all_good(len(rates))
-
 
         if mission is None:
 
@@ -215,7 +206,6 @@ class BinnedSpectrum(Histogram):
         else:
 
             self._instrument = instrument
-
 
         # pass up to the binned spectrum
 
@@ -360,7 +350,6 @@ class BinnedSpectrum(Histogram):
         """
 
         if new_counts is None:
-
             new_counts = self.counts
             new_count_errors = self.count_errors
 
@@ -376,7 +365,7 @@ class BinnedSpectrum(Histogram):
                               instrument=self._instrument)
 
     @classmethod
-    def from_pandas(cls,pandas_dataframe,exposure,scale_factor=1.,is_poisson=False,mission=None,instrument=None):
+    def from_pandas(cls, pandas_dataframe, exposure, scale_factor=1., is_poisson=False, mission=None, instrument=None):
         """
         Build a spectrum from data contained within a pandas data frame.
 
@@ -410,7 +399,6 @@ class BinnedSpectrum(Histogram):
         ebounds = emin.tolist()
         ebounds.append(emax[-1])
 
-
         ebounds = ChannelSet.from_list_of_edges(ebounds)
 
         # default optional parameters
@@ -419,7 +407,6 @@ class BinnedSpectrum(Histogram):
         quality = None
 
         if 'count_errors' in pandas_dataframe.keys():
-
             count_errors = np.array(pandas_dataframe['count_errors'])
 
         if 'sys_errors' in pandas_dataframe.keys():
@@ -439,15 +426,13 @@ class BinnedSpectrum(Histogram):
                    mission=mission,
                    instrument=instrument)
 
-    def to_pandas(self,use_rate=True):
+    def to_pandas(self, use_rate=True):
         """
         make a pandas table from the spectrum.
 
         :param use_rate: if the table should use rates or counts
         :return:
         """
-
-
 
         if use_rate:
 
@@ -459,7 +444,7 @@ class BinnedSpectrum(Histogram):
             out_name = 'counts'
             out_values = self.rates * self.exposure
 
-        out_dict = {'emin': self.starts, 'emax': self.stops,out_name:out_values, 'quality': self.quality}
+        out_dict = {'emin': self.starts, 'emax': self.stops, out_name: out_values, 'quality': self.quality}
 
         if self.rate_errors is not None:
 
@@ -469,19 +454,17 @@ class BinnedSpectrum(Histogram):
 
             else:
 
-                out_dict['count_errors'] =self.rate_errors * self.exposure
+                out_dict['count_errors'] = self.rate_errors * self.exposure
 
         if self.sys_errors is not None:
-
             out_dict['sys_errors'] = None
-
 
         return pd.DataFrame(out_dict)
 
 
 class BinnedSpectrumWithDispersion(BinnedSpectrum):
-
-    def __init__(self, counts, exposure, response, count_errors=None, sys_errors=None, quality=None, scale_factor=1., is_poisson=False, mission=None, instrument=None ):
+    def __init__(self, counts, exposure, response, count_errors=None, sys_errors=None, quality=None, scale_factor=1.,
+                 is_poisson=False, mission=None, instrument=None):
         """
         A binned spectrum that must be deconvolved via a dispersion or response matrix
 
@@ -498,14 +481,11 @@ class BinnedSpectrumWithDispersion(BinnedSpectrum):
         :param instrument:
         """
 
-
         assert isinstance(response, InstrumentResponse), 'The response is not a valid instance of InstrumentResponse'
 
         self._rsp = response
 
         ebounds = ChannelSet.from_instrument_response(response)
-
-
 
         super(BinnedSpectrumWithDispersion, self).__init__(counts=counts,
                                                            exposure=exposure,
@@ -521,7 +501,6 @@ class BinnedSpectrumWithDispersion(BinnedSpectrum):
 
     @property
     def response(self):
-
         return self._rsp
 
     def clone(self, new_counts=None, new_count_errors=None):
@@ -548,14 +527,3 @@ class BinnedSpectrumWithDispersion(BinnedSpectrum):
                                             is_poisson=self._is_poisson,
                                             mission=self._mission,
                                             instrument=self._instrument)
-
-
-
-
-
-
-
-
-
-
-

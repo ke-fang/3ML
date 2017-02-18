@@ -105,7 +105,6 @@ class FermiGBMBurstCatalog(VirtualObservatoryCatalog):
             idx = np.array(map(int, row['scat_detector_mask']), dtype=bool)
             detector_selection = self._gbm_detector_lookup[idx]
 
-
             # get the location
 
 

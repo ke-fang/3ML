@@ -226,7 +226,7 @@ class IntervalSet(object):
         """
 
         assert len(starts) == len(stops), 'starts length: %d and stops length: %d must have same length' % (
-        len(starts), len(stops))
+            len(starts), len(stops))
 
         list_of_intervals = []
 

@@ -180,9 +180,6 @@ class SpectrumLike(PluginPrototype):
                     "Error in ovserved spectrum: if the error on the observation is zero, " \
                     "also the expected observation must be zero"
 
-
-
-
         # Initialize a mask that selects all the data.
         # We will initially use the quality mask for the PHA file
         # and set any quality greater than 0 to False. We want to save
@@ -1057,7 +1054,7 @@ class SpectrumLike(PluginPrototype):
 
             assert new_model in _known_noise_models, "Noise model %s not recognized. " \
                                                      "Allowed models are: %s" % (
-                                                     new_model, ", ".join(_known_noise_models))
+                                                         new_model, ", ".join(_known_noise_models))
 
         self._background_noise_model = new_model
 

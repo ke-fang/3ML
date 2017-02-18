@@ -186,7 +186,6 @@ def _get_fermipy_instance(configuration, likelihood_model):
 
 
 def _expensive_imports_hook():
-
     from fermipy.gtanalysis import GTAnalysis
     from GtBurst.LikelihoodComponent import findGalacticTemplate, findIsotropicTemplate
 

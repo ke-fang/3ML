@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 
 
-
-def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, flux_unit, use_components, components_to_use,
-                                 confidence_level, equal_tailed,differential, sources_to_use):
+def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, flux_unit, use_components,
+                                 components_to_use,
+                                 confidence_level, equal_tailed, differential, sources_to_use):
     """
     helper function to pull out analysis details that are common to flux and plotting functions
 
@@ -39,7 +39,6 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
 
         for source_name, source in analysis.optimized_model.point_sources.iteritems():
 
-
             if source_name in sources_to_use or not sources_to_use:
 
                 if analysis.analysis_type == "MLE":
@@ -62,7 +61,6 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
                     except:
 
                         comps = []
-
 
                     mle_analyses[name] = {'source': source_name, 'analysis': analysis, 'component_names': comps}
 
@@ -90,8 +88,6 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
 
                     bayesian_analyses[name] = {'source': source_name, 'analysis': analysis, 'component_names': comps}
 
-
-
     # keep track of the number of sources we will use
 
     num_sources_to_use = 0
@@ -103,7 +99,6 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
         # if we want to use this source
 
         if not use_components or ('total' in components_to_use) or (not mle_analyses[key]['component_names']):
-
             mle_analyses[key]['fitted point source'] = FittedPointSourceSpectralHandler(mle_analyses[key]['analysis'],
                                                                                         mle_analyses[key]['source'],
                                                                                         energy_range,
@@ -119,12 +114,9 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
 
         if use_components:
 
-
             num_components_to_use = 0
 
             component_dict = {}
-
-
 
             for component in mle_analyses[key]['component_names']:
 
@@ -134,13 +126,13 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
 
                     component_dict[component] = FittedPointSourceSpectralHandler(mle_analyses[key]['analysis'],
                                                                                  mle_analyses[key]['source'],
-                                                               energy_range,
-                                                               energy_unit,
-                                                               flux_unit,
-                                                               confidence_level,
-                                                               equal_tailed,
-                                                               component=component,
-                                                               is_differential_flux=differential)
+                                                                                 energy_range,
+                                                                                 energy_unit,
+                                                                                 flux_unit,
+                                                                                 confidence_level,
+                                                                                 equal_tailed,
+                                                                                 component=component,
+                                                                                 is_differential_flux=differential)
 
                     num_components_to_use += 1
 
@@ -150,14 +142,14 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
 
                     if component in components_to_use:
                         component_dict[component] = FittedPointSourceSpectralHandler(mle_analyses[key]['analysis'],
-                                                                   mle_analyses[key]['source'],
-                                                                   energy_range,
-                                                                   energy_unit,
-                                                                   flux_unit,
-                                                                   confidence_level,
-                                                                    equal_tailed,
-                                                                   component=component,
-                                                                   is_differential_flux=differential)
+                                                                                     mle_analyses[key]['source'],
+                                                                                     energy_range,
+                                                                                     energy_unit,
+                                                                                     flux_unit,
+                                                                                     confidence_level,
+                                                                                     equal_tailed,
+                                                                                     component=component,
+                                                                                     is_differential_flux=differential)
 
                         num_components_to_use += 1
 
@@ -185,16 +177,15 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
         # if we have a source to use
 
         if not use_components or ('total' in components_to_use) or (not bayesian_analyses[key]['component_names']):
-
-
-            bayesian_analyses[key]['fitted point source'] = FittedPointSourceSpectralHandler(bayesian_analyses[key]['analysis'],
-                                                                                             bayesian_analyses[key]['source'],
-                                                                                             energy_range,
-                                                                                             energy_unit,
-                                                                                             flux_unit,
-                                                                                             confidence_level,
-                                                                                             equal_tailed,
-                                                                                             is_differential_flux=differential)
+            bayesian_analyses[key]['fitted point source'] = FittedPointSourceSpectralHandler(
+                bayesian_analyses[key]['analysis'],
+                bayesian_analyses[key]['source'],
+                energy_range,
+                energy_unit,
+                flux_unit,
+                confidence_level,
+                equal_tailed,
+                is_differential_flux=differential)
 
             num_sources_to_use += 1
 
@@ -206,22 +197,20 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
 
             component_dict = {}
 
-
-
             for component in bayesian_analyses[key]['component_names']:
 
                 # extracting all components
 
                 if not components_to_use:
                     component_dict[component] = FittedPointSourceSpectralHandler(bayesian_analyses[key]['analysis'],
-                                                                    bayesian_analyses[key]['source'],
-                                                                    energy_range,
-                                                                    energy_unit,
-                                                                    flux_unit,
-                                                                    confidence_level,
-                                                                    equal_tailed,
-                                                                    component=component,
-                                                                    is_differential_flux=differential)
+                                                                                 bayesian_analyses[key]['source'],
+                                                                                 energy_range,
+                                                                                 energy_unit,
+                                                                                 flux_unit,
+                                                                                 confidence_level,
+                                                                                 equal_tailed,
+                                                                                 component=component,
+                                                                                 is_differential_flux=differential)
 
                     num_components_to_use += 1
 
@@ -229,14 +218,14 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
 
                 if component in components_to_use:
                     component_dict[component] = FittedPointSourceSpectralHandler(bayesian_analyses[key]['analysis'],
-                                                                    bayesian_analyses[key]['source'],
-                                                                    energy_range,
-                                                                    energy_unit,
-                                                                    flux_unit,
-                                                                    confidence_level,
-                                                                    equal_tailed,
-                                                                    component=component,
-                                                                    is_differential_flux=differential)
+                                                                                 bayesian_analyses[key]['source'],
+                                                                                 energy_range,
+                                                                                 energy_unit,
+                                                                                 flux_unit,
+                                                                                 confidence_level,
+                                                                                 equal_tailed,
+                                                                                 component=component,
+                                                                                 is_differential_flux=differential)
 
                     num_components_to_use += 1
 
@@ -266,8 +255,6 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
         if key in bayesian_analyses.keys():
             duplicate_keys.append(key)
 
-
-
     return mle_analyses, bayesian_analyses, num_sources_to_use, duplicate_keys
 
 
@@ -287,8 +274,6 @@ def _collect_sums_into_dictionaries(analyses, use_components, components_to_use)
     num_sources_to_use = 0
 
     for key in analyses.keys():
-
-
 
         # we won't assume to plot the total until the end
 
@@ -322,8 +307,6 @@ def _collect_sums_into_dictionaries(analyses, use_components, components_to_use)
     num_sources_to_use += len(total_analysis)
 
     return total_analysis, component_sum_dict, num_sources_to_use
-
-
 
 
 def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
@@ -362,29 +345,25 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
     }
 
-
     for key, value in kwargs.iteritems():
 
         if key in _defaults:
-
             _defaults[key] = value
-
-
 
     # set up the integral limits
 
     energy_range = np.array([_defaults['ene_min'], _defaults['ene_max']])
 
     mle_analyses, bayesian_analyses, _, _ = _setup_analysis_dictionaries(analyses,
-                                                                                         energy_range,
-                                                                                         _defaults['energy_unit'],
-                                                                                         _defaults['flux_unit'],
-                                                                                         _defaults['use_components'],
-                                                                                         _defaults['components_to_use'],
-                                                                                         _defaults['confidence_level'],
-                                                                                         _defaults['equal_tailed'],
-                                                                                         differential=False,
-                                                                                         sources_to_use=_defaults['sources_to_use'])
+                                                                         energy_range,
+                                                                         _defaults['energy_unit'],
+                                                                         _defaults['flux_unit'],
+                                                                         _defaults['use_components'],
+                                                                         _defaults['components_to_use'],
+                                                                         _defaults['confidence_level'],
+                                                                         _defaults['equal_tailed'],
+                                                                         differential=False,
+                                                                         sources_to_use=_defaults['sources_to_use'])
 
     out = []
 
@@ -421,12 +400,9 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
                         best_fit = mle_analyses[key]['components'][component].median[0, 0]
 
-
-
                     positive_error = mle_analyses[key]['components'][component].upper_error[0, 0]
 
                     negative_error = mle_analyses[key]['components'][component].lower_error[0, 0]
-
 
                     label = "%s: %s" % (key, component)
 
@@ -452,13 +428,9 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
                     best_fit = mle_analyses[key]['fitted point source'].median[0, 0]
 
-
-
-
                 positive_error = mle_analyses[key]['fitted point source'].upper_error[0, 0]
 
                 negative_error = mle_analyses[key]['fitted point source'].lower_error[0, 0]
-
 
                 label = "%s: total" % key
 
@@ -472,7 +444,8 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
 
 
-            mle_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors}, index=labels)
+            mle_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors},
+                                  index=labels)
             mle_df = mle_df[['flux', 'negative error', 'positive error']]
             out.append(mle_df)
 
@@ -485,8 +458,8 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
         # now do the bayesian side
 
         fluxes = []
-        n_errors=[]
-        p_errors=[]
+        n_errors = []
+        p_errors = []
         distributions = []
         labels = []
 
@@ -509,12 +482,10 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
                         best_fit = bayesian_analyses[key]['components'][component].median[0, 0]
 
-
-
                     positive_error = bayesian_analyses[key]['components'][component].upper_error[0, 0]
                     negative_error = bayesian_analyses[key]['components'][component].lower_error[0, 0]
 
-                    dist = bayesian_analyses[key]['components'][component].samples[0,0]
+                    dist = bayesian_analyses[key]['components'][component].samples[0, 0]
 
                     label = "%s: %s" % (key, component)
 
@@ -538,7 +509,6 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
                     best_fit = bayesian_analyses[key]['fitted point source'].median[0, 0]
 
-
                 positive_error = bayesian_analyses[key]['fitted point source'].upper_error[0, 0]
                 negative_error = bayesian_analyses[key]['fitted point source'].lower_error[0, 0]
                 dist = bayesian_analyses[key]['fitted point source'].samples[0, 0]
@@ -554,7 +524,8 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
             # now make a data frame
 
 
-            bayes_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors ,'positive error': p_errors, 'flux distribution': distributions},
+            bayes_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors,
+                                     'flux distribution': distributions},
                                     index=labels)
 
             bayes_df = bayes_df[['flux', 'negative error', 'positive error', 'flux distribution']]
@@ -593,8 +564,6 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
         if _defaults['use_components'] and component_sum_dict_mle.keys():
 
-
-
             # we have components to calculate
 
             for component, values in component_sum_dict_mle.iteritems():
@@ -602,16 +571,15 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
                 if _defaults['best_fit'] == 'average':
 
-                    best_fit = summed_analysis.average[0,0]
+                    best_fit = summed_analysis.average[0, 0]
 
                 else:
 
-                    best_fit = summed_analysis.median[0,0]
+                    best_fit = summed_analysis.median[0, 0]
 
-                positive_error = summed_analysis.upper_error[0,0]
+                positive_error = summed_analysis.upper_error[0, 0]
 
-                negative_error = summed_analysis.lower_error[0,0]
-
+                negative_error = summed_analysis.lower_error[0, 0]
 
                 label = component
 
@@ -632,10 +600,9 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
                 best_fit = summed_analysis.median[0, 0]
 
-
             positive_error = summed_analysis.upper_error[0, 0]
 
-            negative_error = summed_analysis.lower_error[0,0]
+            negative_error = summed_analysis.lower_error[0, 0]
 
             label = 'total'
 
@@ -648,7 +615,8 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
             # now make a data frame
 
 
-            mle_df = pd.DataFrame({'flux': fluxes, 'negative error':n_errors, 'positive error': p_errors}, index=labels)
+            mle_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors},
+                                  index=labels)
             mle_df = mle_df[['flux', 'negative error', 'positive error']]
             out.append(mle_df)
 
@@ -662,10 +630,9 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
         fluxes = []
         n_errors = []
-        p_errors= []
+        p_errors = []
         distributions = []
         labels = []
-
 
         if _defaults['use_components'] and component_sum_dict_bayes.keys():
 
@@ -680,13 +647,12 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
                 else:
 
-                    best_fit = summed_analysis.median[0,0]
-
+                    best_fit = summed_analysis.median[0, 0]
 
                 positive_error = summed_analysis.upper_error[0, 0]
                 negative_error = summed_analysis.lower_error[0, 0]
 
-                dist = summed_analysis.samples[0,0]
+                dist = summed_analysis.samples[0, 0]
 
                 label = component
 
@@ -706,7 +672,7 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
             else:
 
-                best_fit = summed_analysis.median[0,0]
+                best_fit = summed_analysis.median[0, 0]
 
             positive_error = summed_analysis.upper_error[0, 0]
             negative_error = summed_analysis.lower_error[0, 0]
@@ -724,16 +690,16 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
             # now make a data frame
 
 
-            bayes_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error':p_errors,'flux distribution': distributions},
+            bayes_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors,
+                                     'flux distribution': distributions},
                                     index=labels)
 
-            bayes_df = bayes_df[['flux', 'negative error', 'positive error' ,'flux distribution']]
+            bayes_df = bayes_df[['flux', 'negative error', 'positive error', 'flux distribution']]
             out.append(bayes_df)
 
             display(bayes_df)
         else:
 
             out.append(None)
-
 
     return out

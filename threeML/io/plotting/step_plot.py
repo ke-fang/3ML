@@ -60,4 +60,4 @@ def step_plot(xbins, y, ax, fill=False, fill_min=0, **kwargs):
 
         new_y = np.ma.masked_where(~np.isfinite(new_y), new_y)
 
-        ax.step(new_x, new_y, where='post',**kwargs)
+        ax.step(new_x, new_y, where='post', **kwargs)

@@ -257,7 +257,6 @@ class JointLikelihood(object):
         # Show the results
 
         if not quiet:
-
             self._analysis_results.display()
 
         return self._analysis_results.get_data_frame(), self._analysis_results.get_statistic_frame()

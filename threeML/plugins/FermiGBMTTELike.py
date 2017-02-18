@@ -9,7 +9,7 @@ import re
 
 from threeML.plugins.EventListLike import EventListLike
 from threeML.plugins.OGIP.eventlist import EventListWithDeadTime
-from threeML.plugins.OGIP.response import InstrumentResponseSet
+from threeML.plugins.OGIP.response import InstrumentResponseSet, InstrumentResponse
 from threeML.utils.fermi_relative_mission_time import compute_fermi_relative_mission_times
 
 __instrument_name = "Fermi GBM TTE (all detectors)"
@@ -79,23 +79,25 @@ class FermiGBMTTELike(EventListLike):
 
         # we need to see if this is an RSP2
 
-        test = re.match('^.*\.rsp2$', rsp_file)
+        if not isinstance(rsp_file, InstrumentResponse):
 
-        if test is not None:
+            test = re.match('^.*\.rsp2$', rsp_file)
 
-            self._rsp_is_weighted = True
+            if test is not None:
 
-            self._rsp_set = InstrumentResponseSet.from_rsp2_file(rsp2_file=rsp_file,
-                                                                 counts_getter=event_list.counts_over_interval,
-                                                                 exposure_getter=event_list.exposure_over_interval,
-                                                                 reference_time=self._gbm_tte_file.trigger_time)
+                self._rsp_is_weighted = True
 
-            rsp_file = self._rsp_set.weight_by_counts(*[interval.replace(' ', '')
-                                                        for interval in source_intervals.split(',')])
+                self._rsp_set = InstrumentResponseSet.from_rsp2_file(rsp2_file=rsp_file,
+                                                                     counts_getter=event_list.counts_over_interval,
+                                                                     exposure_getter=event_list.exposure_over_interval,
+                                                                     reference_time=self._gbm_tte_file.trigger_time)
 
-        else:
+                rsp_file = self._rsp_set.weight_by_counts(*[interval.replace(' ', '')
+                                                            for interval in source_intervals.split(',')])
 
-            self._rsp_is_weighted = False
+            else:
+
+                self._rsp_is_weighted = False
 
         # pass to the super class
 

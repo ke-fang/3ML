@@ -87,8 +87,7 @@ class ROOTMinimizer(Minimizer):
             for i in range(self.Npar):
 
                 for j in range(self.Npar):
-
-                    covariance_matrix[i,j] = self.minimizer.CovMatrix(i,j)
+                    covariance_matrix[i, j] = self.minimizer.CovMatrix(i, j)
 
         else:
 

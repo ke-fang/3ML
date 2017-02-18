@@ -397,12 +397,9 @@ class LLEFile(object):
     def livetime_stop(self):
         return self._ft2_tstop
 
-
-
     def __repr__(self):
 
-        return  self._output().to_string()
-
+        return self._output().to_string()
 
     def _output(self):
 
@@ -432,12 +429,4 @@ class LLEFile(object):
 
             fermi_df = fermi_df.append(mission_df)
 
-
-
         return fermi_df
-
-
-
-
-
-

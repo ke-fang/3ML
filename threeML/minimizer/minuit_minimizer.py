@@ -92,7 +92,7 @@ class MinuitMinimizer(Minimizer):
         # Finally we can instance the Minuit class
         self.minuit = Minuit(self._f, **iminuit_init_parameters)
 
-        #self.minuit.tol = self.ftol  # ftol
+        # self.minuit.tol = self.ftol  # ftol
 
         try:
 

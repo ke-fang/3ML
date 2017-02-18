@@ -60,6 +60,7 @@ def test_LAT_catalog():
     assert lat_catalog.ra_center == ra
     assert lat_catalog.dec_center == dec
 
+
 @pytest.mark.xfail
 @skip_if_internet_is_not_available
 def test_LLE_catalog():
