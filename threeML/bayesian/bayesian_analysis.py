@@ -64,7 +64,7 @@ def sample_with_progress(title, p0, sampler, n_samples, **kwargs):
     return pos, prob, state
 
 
-def sample_without_progress(p0, sampler, n_samples, **kwargs):
+def sample_without_progress(title, p0, sampler, n_samples, **kwargs):
     return sampler.run_mcmc(p0, n_samples, **kwargs)
 
 
