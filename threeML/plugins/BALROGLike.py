@@ -1,7 +1,7 @@
 
 
 from threeML.plugins.FermiGBMTTELike import FermiGBMTTELike
-
+from astromodels.functions.functions import Uniform_prior, Cosine_Prior
 
 from gbm_drm_gen import DRMGenTTE, BALROG_DRM
 
@@ -73,6 +73,9 @@ class BALROGLike(FermiGBMTTELike):
 
                 self._like_model.point_sources[key].position.ra.free = True
                 self._like_model.point_sources[key].position.dec.free = True
+
+                self._like_model.point_sources[key].position.ra.prior = Uniform_prior(lower_bound=0.,upper_bound=360)
+                self._like_model.point_sources[key].position.dec.prior = Cosine_Prior(lower_bound=-90.,upper_bound=90)
 
     def get_model(self):
 
