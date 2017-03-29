@@ -1,7 +1,8 @@
 __author__ = 'grburgess'
 
-from threeML.io.rich_display import display
+# from threeML.io.rich_display import display
 from threeML.utils.fitted_objects.fitted_point_sources import FittedPointSourceSpectralHandler
+from threeML.exceptions.custom_exceptions import custom_warnings
 
 import numpy as np
 import pandas as pd
@@ -37,7 +38,7 @@ def _setup_analysis_dictionaries(analysis_results, energy_range, energy_unit, fl
 
     for analysis in analysis_results:
 
-        for source_name, source in analysis.optimized_model.point_sources.iteritems():
+        for source_name, source in analysis.optimized_model.point_sources.items():
 
             if source_name in sources_to_use or not sources_to_use:
 
@@ -301,7 +302,7 @@ def _collect_sums_into_dictionaries(analyses, use_components, components_to_use)
 
     if use_components:
 
-        for key, values in component_sum_dict.iteritems():
+        for key, values in component_sum_dict.items():
             num_sources_to_use += len(values)
 
     num_sources_to_use += len(total_analysis)
@@ -309,23 +310,182 @@ def _collect_sums_into_dictionaries(analyses, use_components, components_to_use)
     return total_analysis, component_sum_dict, num_sources_to_use
 
 
-def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
+def _append_best_fit_and_errors(samples, _defaults, label, fluxes, p_errors, n_errors, labels):
+    if _defaults['best_fit'] == 'average':
+
+        best_fit = samples.average[0, 0]
+
+    else:
+
+        best_fit = samples.median[0, 0]
+
+    positive_error = samples.upper_error[0, 0]
+
+    negative_error = samples.lower_error[0, 0]
+
+    fluxes.append(best_fit)
+    p_errors.append(positive_error)
+    n_errors.append(negative_error)
+    labels.append(label)
+
+
+def _compute_output(analyses, _defaults, out):
+    fluxes = []
+    p_errors = []
+    n_errors = []
+    labels = []
+
+    # go thru the mle analysis and get the fluxes
+    for key in analyses.keys():
+
+        # we won't assume to plot the total until the end
+
+        get_total = False
+
+        if _defaults['use_components']:
+
+            # if this source has no components or none that we wish to plot
+            # then we will get the total flux after this
+
+            if (not analyses[key]['components'].keys()) or ('total' in _defaults['components_to_use']):
+                get_total = True
+
+            for component in analyses[key]['components'].keys():
+                # extract the information and plot it
+
+                samples = analyses[key]['components'][component]
+
+                label = "%s: %s" % (key, component)
+
+                _append_best_fit_and_errors(samples, _defaults, label, fluxes, p_errors, n_errors, labels)
+
+        else:
+
+            get_total = True
+
+        if get_total:
+            # it ends up that we need to plot the total spectrum
+            # which is just a repeat of the process
+
+            samples = analyses[key]['fitted point source']
+
+            label = "%s: total" % key
+
+            _append_best_fit_and_errors(samples, _defaults, label, fluxes, p_errors, n_errors, labels)
+
+    if fluxes:
+        # now make a data frame
+
+        mle_df = pd.DataFrame({'flux': fluxes, 'low bound': n_errors, 'hi bound': p_errors},
+                              index=labels)
+        mle_df = mle_df[['flux', 'low bound', 'hi bound']]
+        mle_df = mle_df[['flux', 'low bound', 'hi bound']]
+        out.append(mle_df)
+
+        # display(mle_df)
+
+    else:
+
+        out.append(None)
+
+
+def _compute_output_with_components(_defaults, component_sum_dict, total_analysis, out):
+
+    fluxes = []
+    n_errors = []
+    p_errors = []
+    labels = []
+
+    if _defaults['use_components'] and component_sum_dict.keys():
+
+        # we have components to calculate
+
+        for component, values in component_sum_dict.items():
+
+            summed_analysis = sum(values)
+
+            if _defaults['best_fit'] == 'average':
+
+                best_fit = summed_analysis.average[0, 0]
+
+            else:
+
+                best_fit = summed_analysis.median[0, 0]
+
+            positive_error = summed_analysis.upper_error[0, 0]
+
+            negative_error = summed_analysis.lower_error[0, 0]
+
+            label = component
+
+            fluxes.append(best_fit)
+            p_errors.append(positive_error)
+            n_errors.append(negative_error)
+            labels.append(label)
+
+    if total_analysis:
+
+        summed_analysis = sum(total_analysis)
+
+        if _defaults['best_fit'] == 'average':
+
+            best_fit = summed_analysis.average[0, 0]
+
+        else:
+
+            best_fit = summed_analysis.median[0, 0]
+
+        positive_error = summed_analysis.upper_error[0, 0]
+
+        negative_error = summed_analysis.lower_error[0, 0]
+
+        label = 'total'
+
+        fluxes.append(best_fit)
+        p_errors.append(positive_error)
+        n_errors.append(negative_error)
+        labels.append(label)
+
+    if fluxes:
+        # now make a data frame
+
+
+        df = pd.DataFrame({'flux': fluxes, 'low bound': n_errors, 'hi bound': p_errors}, index=labels)
+        df = df[['flux', 'low bound', 'hi bound']]
+        out.append(df)
+
+        # display(df)
+
+    else:
+
+        out.append(None)
+
+
+def calculate_point_source_flux(*args, **kwargs):
+
+    custom_warnings.warn("The use of calculate_point_source_flux is deprecated. Please use the .get_point_source_flux()"
+                         " method of the JointLikelihood.results or the BayesianAnalysis.results member. For example:"
+                         " jl.results.get_point_source_flux().")
+
+    return _calculate_point_source_flux(*args, **kwargs)
+
+
+def _calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
     """
 
-    :param ene_min: lower energy bound for int
-    :param ene_max:
+    :param ene_min: lower energy bound for the flux
+    :param ene_max: upper energy bound for the flux
     :param analyses: fitted JointLikelihood or BayesianAnalysis objects
     :param sources_to_use: (optional) list of PointSource string names to plot from the analysis
     :param energy_unit: (optional) astropy energy unit in string form (can also be frequency)
     :param flux_unit: (optional) astropy flux unit in string form
     :param ene_min: (optional) minimum energy to plot
     :param ene_max: (optional) maximum energy to plot
-    :param num_ene: (optional) number of energies to plot
     :param use_components: (optional) True or False to plot the spectral components
     :param components_to_use: (optional) list of string names of the components to plot: including 'total'
     will also plot the total spectrum
 
-    :return:
+    :return: mle_dataframe, bayes_dataframe
     """
 
     _defaults = {
@@ -334,18 +494,16 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
         'best_fit': 'median',
         'energy_unit': 'keV',
         'flux_unit': 'erg/(s cm2)',
-        'ene_min': 10.,
-        'ene_max': 1E4,
-        'num_ene': 100,
+        'ene_min': ene_min,
+        'ene_max': ene_max,
         'use_components': False,
         'components_to_use': [],
         'sources_to_use': [],
         'sum_sources': False,
-        'show_contours': True,
 
     }
 
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
 
         if key in _defaults:
             _defaults[key] = value
@@ -369,337 +527,32 @@ def calculate_point_source_flux(ene_min, ene_max, *analyses, **kwargs):
 
     if not _defaults['sum_sources']:
 
-        fluxes = []
-        p_errors = []
-        n_errors = []
-        labels = []
+        # Process the MLE analyses
 
-        # go thru the mle analysis and get the fluxes
-        for key in mle_analyses.keys():
-
-            # we won't assume to plot the total until the end
-
-            get_total = False
-
-            if _defaults['use_components']:
-
-                # if this source has no components or none that we wish to plot
-                # then we will get the total flux after this
-
-                if (not mle_analyses[key]['components'].keys()) or ('total' in _defaults['components_to_use']):
-                    get_total = True
-
-                for component in mle_analyses[key]['components'].keys():
-                    # extract the information and plot it
-
-                    if _defaults['best_fit'] == 'average':
-
-                        best_fit = mle_analyses[key]['components'][component].average[0, 0]
-
-                    else:
-
-                        best_fit = mle_analyses[key]['components'][component].median[0, 0]
-
-                    positive_error = mle_analyses[key]['components'][component].upper_error[0, 0]
-
-                    negative_error = mle_analyses[key]['components'][component].lower_error[0, 0]
-
-                    label = "%s: %s" % (key, component)
-
-                    fluxes.append(best_fit)
-                    p_errors.append(positive_error)
-                    n_errors.append(negative_error)
-                    labels.append(label)
-
-
-            else:
-
-                get_total = True
-
-            if get_total:
-                # it ends up that we need to plot the total spectrum
-                # which is just a repeat of the process
-
-                if _defaults['best_fit'] == 'average':
-
-                    best_fit = mle_analyses[key]['fitted point source'].average[0, 0]
-
-                else:
-
-                    best_fit = mle_analyses[key]['fitted point source'].median[0, 0]
-
-                positive_error = mle_analyses[key]['fitted point source'].upper_error[0, 0]
-
-                negative_error = mle_analyses[key]['fitted point source'].lower_error[0, 0]
-
-                label = "%s: total" % key
-
-                fluxes.append(best_fit)
-                p_errors.append(positive_error)
-                n_errors.append(negative_error)
-                labels.append(label)
-
-        if fluxes:
-            # now make a data frame
-
-
-
-            mle_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors},
-                                  index=labels)
-            mle_df = mle_df[['flux', 'negative error', 'positive error']]
-            out.append(mle_df)
-
-            display(mle_df)
-
-        else:
-
-            out.append(None)
+        _compute_output(mle_analyses, _defaults, out)
 
         # now do the bayesian side
 
-        fluxes = []
-        n_errors = []
-        p_errors = []
-        distributions = []
-        labels = []
-
-        for key in bayesian_analyses.keys():
-
-            get_total = False
-
-            if _defaults['use_components']:
-
-                if (not bayesian_analyses[key]['components'].keys()) or ('total' in _defaults['components_to_use']):
-                    get_total = True
-
-                for component in bayesian_analyses[key]['components'].keys():
-
-                    if _defaults['best_fit'] == 'average':
-
-                        best_fit = bayesian_analyses[key]['components'][component].average[0, 0]
-
-                    else:
-
-                        best_fit = bayesian_analyses[key]['components'][component].median[0, 0]
-
-                    positive_error = bayesian_analyses[key]['components'][component].upper_error[0, 0]
-                    negative_error = bayesian_analyses[key]['components'][component].lower_error[0, 0]
-
-                    dist = bayesian_analyses[key]['components'][component].samples[0, 0]
-
-                    label = "%s: %s" % (key, component)
-
-                    fluxes.append(best_fit)
-                    p_errors.append(positive_error)
-                    n_errors.append(negative_error)
-                    distributions.append(dist)
-                    labels.append(label)
-
-            else:
-
-                get_total = True
-
-            if get_total:
-
-                if _defaults['best_fit'] == 'average':
-
-                    best_fit = bayesian_analyses[key]['fitted point source'].average[0, 0]
-
-                else:
-
-                    best_fit = bayesian_analyses[key]['fitted point source'].median[0, 0]
-
-                positive_error = bayesian_analyses[key]['fitted point source'].upper_error[0, 0]
-                negative_error = bayesian_analyses[key]['fitted point source'].lower_error[0, 0]
-                dist = bayesian_analyses[key]['fitted point source'].samples[0, 0]
-                label = "%s: total" % key
-
-                fluxes.append(best_fit)
-                p_errors.append(positive_error)
-                n_errors.append(negative_error)
-                distributions.append(dist)
-                labels.append(label)
-
-        if fluxes:
-            # now make a data frame
-
-
-            bayes_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors,
-                                     'flux distribution': distributions},
-                                    index=labels)
-
-            bayes_df = bayes_df[['flux', 'negative error', 'positive error', 'flux distribution']]
-            out.append(bayes_df)
-
-            display(bayes_df)
-
-        else:
-
-            out.append(None)
-
-
-
-
-
+        _compute_output(bayesian_analyses, _defaults, out)
 
     else:
 
         # instead we now sum the fluxes
         # we keep bayes and mle apart
 
-
         total_analysis_mle, component_sum_dict_mle, _ = _collect_sums_into_dictionaries(mle_analyses,
                                                                                         _defaults['use_components'],
                                                                                         _defaults['components_to_use'])
 
-        total_analysis_bayes, component_sum_dict_bayes, _ = _collect_sums_into_dictionaries(
-            bayesian_analyses,
-            _defaults['use_components'],
-            _defaults['components_to_use'])
-
-        fluxes = []
-        n_errors = []
-        p_errors = []
-        labels = []
-
-        if _defaults['use_components'] and component_sum_dict_mle.keys():
-
-            # we have components to calculate
-
-            for component, values in component_sum_dict_mle.iteritems():
-                summed_analysis = sum(values)
-
-                if _defaults['best_fit'] == 'average':
-
-                    best_fit = summed_analysis.average[0, 0]
-
-                else:
-
-                    best_fit = summed_analysis.median[0, 0]
-
-                positive_error = summed_analysis.upper_error[0, 0]
-
-                negative_error = summed_analysis.lower_error[0, 0]
-
-                label = component
-
-                fluxes.append(best_fit)
-                p_errors.append(positive_error)
-                n_errors.append(negative_error)
-                labels.append(label)
-
-        if total_analysis_mle:
-
-            summed_analysis = sum(total_analysis_mle)
-
-            if _defaults['best_fit'] == 'average':
-
-                best_fit = summed_analysis.average[0, 0]
-
-            else:
-
-                best_fit = summed_analysis.median[0, 0]
-
-            positive_error = summed_analysis.upper_error[0, 0]
-
-            negative_error = summed_analysis.lower_error[0, 0]
-
-            label = 'total'
-
-            fluxes.append(best_fit)
-            p_errors.append(positive_error)
-            n_errors.append(negative_error)
-            labels.append(label)
-
-        if fluxes:
-            # now make a data frame
-
-
-            mle_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors},
-                                  index=labels)
-            mle_df = mle_df[['flux', 'negative error', 'positive error']]
-            out.append(mle_df)
-
-            display(mle_df)
-
-        else:
-
-            out.append(None)
+        _compute_output_with_components(_defaults, component_sum_dict_mle, total_analysis_mle, out)
 
         # now do the bayesian side
 
-        fluxes = []
-        n_errors = []
-        p_errors = []
-        distributions = []
-        labels = []
+        total_analysis_bayes, component_sum_dict_bayes, _ = _collect_sums_into_dictionaries(bayesian_analyses,
+                                                                                            _defaults['use_components'],
+                                                                                            _defaults[
+                                                                                                'components_to_use'])
 
-        if _defaults['use_components'] and component_sum_dict_bayes.keys():
-
-            # we have components to plot
-
-            for component, values in component_sum_dict_bayes.iteritems():
-                summed_analysis = sum(values)
-
-                if _defaults['best_fit'] == 'average':
-
-                    best_fit = summed_analysis.average[0, 0]
-
-                else:
-
-                    best_fit = summed_analysis.median[0, 0]
-
-                positive_error = summed_analysis.upper_error[0, 0]
-                negative_error = summed_analysis.lower_error[0, 0]
-
-                dist = summed_analysis.samples[0, 0]
-
-                label = component
-
-                fluxes.append(best_fit)
-                p_errors.append(positive_error)
-                n_errors.append(negative_error)
-                distributions.append(dist)
-                labels.append(label)
-
-        if total_analysis_bayes:
-
-            summed_analysis = sum(total_analysis_bayes)
-
-            if _defaults['best_fit'] == 'average':
-
-                best_fit = summed_analysis.average[0, 0]
-
-            else:
-
-                best_fit = summed_analysis.median[0, 0]
-
-            positive_error = summed_analysis.upper_error[0, 0]
-            negative_error = summed_analysis.lower_error[0, 0]
-            dist = summed_analysis.samples[0, 0]
-
-            label = 'total'
-
-            fluxes.append(best_fit)
-            p_errors.append(positive_error)
-            n_errors.append(negative_error)
-            distributions.append(dist)
-            labels.append(label)
-
-        if fluxes:
-            # now make a data frame
-
-
-            bayes_df = pd.DataFrame({'flux': fluxes, 'negative error': n_errors, 'positive error': p_errors,
-                                     'flux distribution': distributions},
-                                    index=labels)
-
-            bayes_df = bayes_df[['flux', 'negative error', 'positive error', 'flux distribution']]
-            out.append(bayes_df)
-
-            display(bayes_df)
-        else:
-
-            out.append(None)
+        _compute_output_with_components(_defaults, component_sum_dict_bayes, total_analysis_bayes, out)
 
     return out
