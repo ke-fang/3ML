@@ -150,6 +150,16 @@ class Interval(object):
 
             return self.start == other.start and self.stop == other.stop
 
+    def is_in(self,value):
+        """
+        return True or False conditional on the value being inside the bin
+
+        :param value: value ot check
+        :return: cool
+        """
+
+        return self._start <= value <= self._stop
+
 
 class IntervalSet(object):
     """
@@ -412,6 +422,45 @@ class IntervalSet(object):
         """
 
         return np.all(self.argsort() == np.arange(len(self)))
+
+    def containing_interval(self, start, stop, as_mask=False):
+        """
+
+        returns eitehr a mask of the intervals contained in the selection
+        or a new set of intervals within the selection. NOTE: no sort is performed
+
+        :param start:
+        :param stop:
+        :param as_mask:
+        :return:
+        """
+
+        mask = np.zeros(len(self))
+
+        down_selected_bins = []
+
+        for i, bin in enumerate(self):
+
+            if bin.start <= start or bin.stop <= stop:
+
+                mask[i] = True
+                down_selected_bins.append(bin)
+
+        if as_mask:
+
+            return mask
+
+        else:
+
+
+            return self.new(down_selected_bins)
+
+
+
+
+
+
+
 
     def containing_bin(self, value):
         """

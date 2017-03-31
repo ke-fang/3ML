@@ -552,6 +552,34 @@ class BinnedSpectrumWithDispersion(BinnedSpectrum):
                                             instrument=self._instrument)
 
 
+    @classmethod
+    def from_binned_spectrum_and_response(cls, binned_spectrum, response):
+        #type: (BinnedSpectrum, InstrumentResponse) -> BinnedSpectrumWithDisperison
+        """
+
+        builds a binned spectrum with dispersion from an existing binned spectrum
+        and a response.
+
+
+        :param binned_spectrum: binned spectrum
+        :param response: instrument response
+        """
+
+        return cls(counts=binned_spectrum.counts,
+            exposure=binned_spectrum.exposure,
+            response=response,
+            count_errors=binned_spectrum.count_errors,
+            sys_errors=binned_spectrum.sys_errors,
+            quality=binned_spectrum.quality,
+            scale_factor=binned_spectrum.scale_factor,
+            is_poisson=binned_spectrum.is_poisson,
+            mission=binned_spectrum.mission,
+            instrument=binned_spectrum.instrument
+            )
+
+
+
+
 
 
 

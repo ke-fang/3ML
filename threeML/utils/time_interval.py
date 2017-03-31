@@ -1,3 +1,5 @@
+import numpy as np
+
 from threeML.utils.interval import Interval, IntervalSet
 
 
@@ -88,6 +90,16 @@ class TimeIntervalSet(IntervalSet):
         """
 
         return self.absolute_stop
+
+    @property
+    def half_times(self):
+        """
+        the half time of each interval
+
+        :return:
+        """
+
+        return np.array([ interval.half_time for interval in self._intervals])
 
     @property
     def half_time(self):

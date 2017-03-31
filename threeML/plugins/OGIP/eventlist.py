@@ -18,7 +18,7 @@ from threeML.utils.binner import TemporalBinner
 from threeML.utils.time_interval import TimeInterval, TimeIntervalSet
 
 
-from threeML.plugins.OGIP.event_polynomial import polyfit, unbinned_polyfit, Polynomial
+from threeML.plugins.OGIP.event_polynomial import polyfit, unbinned_polyfit, Polynomial, fit_global_and_determine_optimum_grade, unbinned_fit_global_and_determine_optimum_grade
 
 
 
@@ -447,6 +447,9 @@ class EventList(object):
 
         poly_intervals = TimeIntervalSet.from_strings(*time_intervals)
 
+        starts = []
+        stops = []
+
         for time_interval in poly_intervals:
             t1 = time_interval.start_time
             t2 = time_interval.stop_time
@@ -475,8 +478,13 @@ class EventList(object):
                         t1, t2))
                 continue
 
+            starts.append(t1)
+            stops.append(t2)
 
-        self._poly_intervals = poly_intervals
+
+        self._poly_intervals = TimeIntervalSet.from_starts_and_stops(starts,
+                                                                     stops)
+
 
         # Fit the events with the given intervals
         if unbinned:
@@ -596,97 +604,8 @@ class EventList(object):
 
 
 
-    def _fit_global_and_determine_optimum_grade(self, cnts, bins, exposure):
-        """
-        Provides the ability to find the optimum polynomial grade for *binned* counts by fitting the
-        total (all channels) to 0-4 order polynomials and then comparing them via a likelihood ratio test.
 
 
-        :param cnts: counts per bin
-        :param bins: the bins used
-        :param exposure: exposure per bin
-        :return: polynomial grade
-        """
-
-        min_grade = 0
-        max_grade = 4
-        log_likelihoods = []
-
-        for grade in range(min_grade, max_grade + 1):
-            polynomial, log_like = polyfit(bins, cnts, grade, exposure)
-
-            log_likelihoods.append(log_like)
-
-        # Found the best one
-        delta_loglike = np.array(map(lambda x: 2 * (x[0] - x[1]), zip(log_likelihoods[:-1], log_likelihoods[1:])))
-
-        # print("\ndelta log-likelihoods:")
-
-        # for i in range(max_grade):
-        #    print("%s -> %s: delta Log-likelihood = %s" % (i, i + 1, deltaLoglike[i]))
-
-        # print("")
-
-        delta_threshold = 9.0
-
-        mask = (delta_loglike >= delta_threshold)
-
-        if (len(mask.nonzero()[0]) == 0):
-
-            # best grade is zero!
-            best_grade = 0
-
-        else:
-
-            best_grade = mask.nonzero()[0][-1] + 1
-
-        return best_grade
-
-    def _unbinned_fit_global_and_determine_optimum_grade(self, events, exposure):
-        """
-        Provides the ability to find the optimum polynomial grade for *unbinned* events by fitting the
-        total (all channels) to 0-4 order polynomials and then comparing them via a likelihood ratio test.
-
-
-        :param events: an event list
-        :param exposure: the exposure per event
-        :return: polynomial grade
-        """
-
-        # Fit the sum of all the channels to determine the optimal polynomial
-        # grade
-
-
-        min_grade = 0
-        max_grade = 4
-        log_likelihoods = []
-
-        t_start = self._poly_intervals.start_times
-        t_stop = self._poly_intervals.stop_times
-
-
-        for grade in range(min_grade, max_grade + 1):
-            polynomial, log_like = unbinned_polyfit(events, grade, t_start, t_stop, exposure)
-
-            log_likelihoods.append(log_like)
-
-        # Found the best one
-        delta_loglike = np.array(map(lambda x: 2 * (x[0] - x[1]), zip(log_likelihoods[:-1], log_likelihoods[1:])))
-
-        delta_threshold = 9.0
-
-        mask = (delta_loglike >= delta_threshold)
-
-        if (len(mask.nonzero()[0]) == 0):
-
-            # best grade is zero!
-            best_grade = 0
-
-        else:
-
-            best_grade = mask.nonzero()[0][-1] + 1
-
-        return best_grade
 
     def _fit_polynomials(self):
         """
@@ -771,10 +690,10 @@ class EventList(object):
 
         if self._user_poly_order == -1:
 
-            self._optimal_polynomial_grade = self._fit_global_and_determine_optimum_grade(cnts[non_zero_mask],
-                                                                                          mean_time[non_zero_mask],
-                                                                                          exposure_per_bin[
-                                                                                              non_zero_mask])
+            self._optimal_polynomial_grade = fit_global_and_determine_optimum_grade(cnts[non_zero_mask],
+                                                                                    mean_time[non_zero_mask],
+                                                                                    exposure_per_bin[
+                                                                                    non_zero_mask])
             if self._verbose:
                 print("Auto-determined polynomial order: %d" % self._optimal_polynomial_grade)
                 print('\n')
@@ -866,8 +785,11 @@ class EventList(object):
 
         if self._user_poly_order == -1:
 
-            self._optimal_polynomial_grade = self._unbinned_fit_global_and_determine_optimum_grade(total_poly_events,
-                                                                                                   poly_exposure)
+            self._optimal_polynomial_grade = unbinned_fit_global_and_determine_optimum_grade(total_poly_events,
+                                                                                             poly_exposure,
+                                                                                             self._poly_intervals.start_times,
+                                                                                             self._poly_intervals.stop_times
+                                                                                             )
             if self._verbose:
                 print("Auto-determined polynomial order: %d" % self._optimal_polynomial_grade)
                 print('\n')
