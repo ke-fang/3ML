@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to The Multi-Mission Maximum Likelihood framework's documentation!
+The Multi-Mission Maximum Likelihood framework (3ML)
 ==========================================================================
 
 Contents:
@@ -12,18 +12,8 @@ Contents:
     :maxdepth: 10
 
     notebooks/Quickstart.ipynb
-
+    notebooks/The 3ML workflow.ipynb
+    notebooks/Point source plotting.ipynb
 
 .. automodule:: threeML
     :members:
-
-.. autoclass:: JointLikelihood
-    :members:
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-

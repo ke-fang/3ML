@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from astromodels.core.parameter import Parameter
-from astromodels.functions.functions import Uniform_prior
+from astromodels.functions.priors import Uniform_prior
 from astromodels.utils.valid_variable import is_valid_variable_name
 from astromodels import clone_model
 
@@ -1310,7 +1310,7 @@ class SpectrumLike(PluginPrototype):
 
         sig_obj = Significance(Non=self._observed_spectrum.total_count,
                                Noff=self._background_spectrum.total_count,
-                               alpha=self.exposure / self.background_exposure)
+                               alpha=self.scale_factor)
 
         if self._observed_spectrum.is_poisson and self._background_spectrum.is_poisson:
 
@@ -1336,7 +1336,7 @@ class SpectrumLike(PluginPrototype):
 
         sig_obj = Significance(Non=self._current_observed_counts,
                                Noff=self._current_background_counts,
-                               alpha=self.exposure / self.background_exposure)
+                               alpha=self.scale_factor)
 
         if self._observed_spectrum.is_poisson and self._background_spectrum.is_poisson:
 
@@ -1645,6 +1645,16 @@ class SpectrumLike(PluginPrototype):
         # obs['response'] = self._observed_spectrum.response_file
 
         return pd.Series(data=obs, index=obs.keys())
+
+    def get_number_of_data_points(self):
+        """
+        returns the number of active data bins
+        :return:
+        """
+
+        # the sum of the mask should be the number of data bins in use
+
+        return self._mask.sum()
 
     def display(self):
 

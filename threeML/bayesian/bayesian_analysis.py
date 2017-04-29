@@ -32,13 +32,12 @@ import os
 
 import matplotlib.pyplot as plt
 
-
 from threeML.parallel.parallel_client import ParallelClient
 from threeML.config.config import threeML_config
 from threeML.io.progress_bar import progress_bar
-from corner import corner
 from threeML.exceptions.custom_exceptions import LikelihoodIsInfinite, custom_warnings
 from threeML.analysis_results import BayesianResults
+from threeML.utils.stats_tools import aic, bic, dic
 
 from astromodels import ModelAssertionViolation, use_astromodels_memoization
 
@@ -51,7 +50,6 @@ def sample_with_progress(title, p0, sampler, n_samples, **kwargs):
     # This is only for producing the progress bar
 
     with progress_bar(n_samples, title=title) as progress:
-
         for i, result in enumerate(sampler.sample(p0, iterations=n_samples, **kwargs)):
             # Show progress
 
@@ -64,12 +62,11 @@ def sample_with_progress(title, p0, sampler, n_samples, **kwargs):
     return pos, prob, state
 
 
-def sample_without_progress(title, p0, sampler, n_samples, **kwargs):
+def sample_without_progress(p0, sampler, n_samples, title=None, **kwargs):
     return sampler.run_mcmc(p0, n_samples, **kwargs)
 
 
 class BayesianAnalysis(object):
-
     def __init__(self, likelihood_model, data_list, **kwargs):
         """
         Bayesian analysis.
@@ -100,12 +97,30 @@ class BayesianAnalysis(object):
 
         self._likelihood_model = likelihood_model
 
-        self.data_list = data_list
+        self._data_list = data_list
 
-        # Make sure that the current model is used in all data sets
+        for dataset in self._data_list.values():
 
-        for dataset in self.data_list.values():
             dataset.set_model(self._likelihood_model)
+
+            # Now get the nuisance parameters from the data and add them to the model
+            # NOTE: it is important that this is *after* the setting of the model, as some
+            # plugins might need to adjust the number of nuisance parameters depending on the
+            # likelihood model
+
+            for parameter_name, parameter in dataset.nuisance_parameters.items():
+                # Enforce that the nuisance parameter contains the instance name, because otherwise multiple instance
+                # of the same plugin will overwrite each other's nuisance parameters
+
+                assert dataset.name in parameter_name, "This is a bug of the plugin for %s: nuisance parameters " \
+                                                       "must contain the instance name" % type(dataset)
+
+                self._likelihood_model.add_external_parameter(parameter)
+
+        # # Make sure that the current model is used in all data sets
+        #
+        # for dataset in self.data_list.values():
+        #     dataset.set_model(self._likelihood_model)
 
         # Init the samples to None
 
@@ -207,7 +222,7 @@ class BayesianAnalysis(object):
                                                 self.get_posterior)
 
             # Sample the burn-in
-            pos, prob, state = sampling_procedure("Burn-in", p0, sampler, burn_in)
+            pos, prob, state = sampling_procedure(title="Burn-in", p0=p0, sampler=sampler, n_samples=burn_in)
 
             # Reset sampler
 
@@ -215,7 +230,7 @@ class BayesianAnalysis(object):
 
             # Run the true sampling
 
-            _ = sampling_procedure("Sampling", pos, sampler, n_samples, rstate0=state)
+            _ = sampling_procedure(title="Sampling", p0=pos, sampler=sampler, n_samples=n_samples, rstate0=state)
 
         acc = np.mean(sampler.acceptance_fraction)
 
@@ -412,6 +427,7 @@ class BayesianAnalysis(object):
 
         # Sets the values of the parameters to their MAP values
         for i, parameter in enumerate(self._free_parameters):
+
             self._free_parameters[parameter].value = approximate_MAP_point[i]
 
         # Get the value of the posterior for each dataset at the MAP
@@ -419,12 +435,47 @@ class BayesianAnalysis(object):
 
         log_prior = self._log_prior(approximate_MAP_point)
 
-        for dataset in self.data_list.values():
-            log_posteriors[dataset.name] = dataset.get_log_like() + log_prior
+        # keep track of the total number of data points
+        # and the total posterior
+
+        total_n_data_points = 0
+
+        total_log_posterior = 0
+
+        for dataset in self._data_list.values():
+
+
+            log_posterior = dataset.get_log_like() + log_prior
+
+            log_posteriors[dataset.name] = log_posterior
+
+            total_n_data_points += dataset.get_number_of_data_points()
+
+            total_log_posterior += log_posterior
+
+
+        # compute the statistical measures
+
+        statistical_measures = collections.OrderedDict()
+
+        # compute the point estimates
+
+        statistical_measures['AIC'] = aic(total_log_posterior,len(self._free_parameters),total_n_data_points)
+        statistical_measures['BIC'] = bic(total_log_posterior,len(self._free_parameters),total_n_data_points)
+
+        this_dic, pdic = dic(self)
+
+        # compute the posterior estimates
+
+        statistical_measures['DIC'] = this_dic
+        statistical_measures['PDIC'] = pdic
+
+        #TODO: add WAIC
+
 
         # Instance the result
 
-        self._results = BayesianResults(self._likelihood_model, self._raw_samples, log_posteriors)
+        self._results = BayesianResults(self._likelihood_model, self._raw_samples, log_posteriors,statistical_measures=statistical_measures)
 
     @property
     def raw_samples(self):
@@ -455,14 +506,6 @@ class BayesianAnalysis(object):
 
         return self._sampler
 
-    def get_effective_free_parameters(self):
-        """
-        Calculates the effective number of free parameters from the posterior
-         -2.*(mean(posterior)-max(log. likelihood))
-        :return: Effective number of free parameters
-        """
-
-        return -2. * (np.mean(self._log_like_values) - np.max(self._log_like_values))  # need to check math!
 
     # def get_highest_density_interval(self, probability=95):
     #     """
@@ -643,46 +686,12 @@ class BayesianAnalysis(object):
         :return: a matplotlib.figure instance
         """
 
+
+        DeprecationWarning('Please use <bayesian_analysis>.results.corner_plot. This feature will be removed in the future.')
+
         if self.samples is not None:
 
-            assert len(self._free_parameters.keys()) == self.raw_samples[0].shape[0], ("Mismatch between sample"
-                                                                                       " dimensions and number of free"
-                                                                                       " parameters")
-
-            labels = []
-            priors = []
-
-            for i, (parameter_name, parameter) in enumerate(self._free_parameters.iteritems()):
-                short_name = parameter_name.split(".")[-1]
-
-                labels.append(short_name)
-
-                priors.append(self._likelihood_model.parameters[parameter_name].prior)
-
-            # Rename the parameters if needed.
-
-            if renamed_parameters is not None:
-
-                for old_label, new_label in renamed_parameters.iteritems():
-
-                    for i, _ in enumerate(labels):
-
-                        if labels[i] == old_label:
-                            labels[i] = new_label
-
-
-            # default arguments
-            default_args = {'show_titles': True, 'title_fmt': ".2g", 'labels': labels,
-                            'quantiles': [0.16, 0.50, 0.84]}
-
-            # Update the default arguents with the one provided (if any). Note that .update also adds new keywords,
-            # if they weren't present in the original dictionary, so you can use any option in kwargs, not just
-            # the one in default_args
-            default_args.update(kwargs)
-
-            fig = corner(self.raw_samples, **default_args)
-
-            return fig
+            return self._results.corner_plot(renamed_parameters, **kwargs)
 
         else:
 
@@ -702,152 +711,46 @@ class BayesianAnalysis(object):
         :return fig:
         """
 
-        if not has_chainconsumer:
-            RuntimeError("You must have chainconsumer installed to use this function")
+        DeprecationWarning(
+            'Please use <bayesian_analysis>.results.corner_plot_cc. This feature will be removed in the future.')
+
 
         if self.samples is not None:
-            assert len(self._free_parameters.keys()) == self.raw_samples[0].shape[0], ("Mismatch between sample"
-                                                                                       " dimensions and number of free"
-                                                                                       " parameters")
 
-        labels = []
-        priors = []
+            return self._results.corner_plot_cc(parameters,renamed_parameters,figsize, **cc_kwargs)
 
-        for i, (parameter_name, parameter) in enumerate(self._free_parameters.iteritems()):
-            short_name = parameter_name.split(".")[-1]
+        else:
 
-            labels.append(short_name)
+            raise RuntimeError("You have to run the sampler first, using the sample() method")
 
-            priors.append(self._likelihood_model.parameters[parameter_name].prior)
 
-        # Rename the parameters if needed.
 
-        if renamed_parameters is not None:
-
-            for old_label, new_label in renamed_parameters.iteritems():
-
-                for i, _ in enumerate(labels):
-
-                    if labels[i] == old_label:
-                        labels[i] = new_label
-
-        # Must remove underscores!
-
-        for i, val, in enumerate(labels):
-
-            if '$' not in labels[i]:
-                labels[i] = val.replace('_', '')
-
-        cc = chainconsumer.ChainConsumer()
-
-        cc.add_chain(self.raw_samples, parameters=labels)
-
-        if not cc_kwargs:
-            cc_kwargs = threeML_config['bayesian']['chain consumer style']
-
-        cc.configure(**cc_kwargs)
-        fig = cc.plot(parameters=parameters)
-
-        return fig
-
-    def compare_posterior(self, other_fit, sigmas=[0, 1, 2, 3], cloud=False, shade=True, shade_alpha=1.,
-                          parameters=None, renamed_parameters=None, **kwargs):
+    def compare_posterior(self, *other_fits, **kwargs):
         """
+        Create a corner plot from many different bayesian fits which allow for co-plotting of parameters marginals.
 
-        Create a corner plot from two different bayesian fits which allow for co-plotting of parameters marginals.
-
-        Args:
-            other_fit: Another fitted BayesianAnalysis object to compare top the this analysis
-            sigmas: list of sigma levels to include. 0 must be included to avoid hole in contour
-            cloud: bool. Whether or not to plot MC points
-            shade: bool. Fill in the contours
-            shade_alpha: alpha level of contours
-            parameters: list of parameters to plot
-            renamed_parameters: a python dictionary of parameters to rename.
+        :param other_fits: other fitted Bayesian analysis objects
+        :param parameters: parameters to plot
+        :param renamed_parameters: a python dictionary of parameters to rename.
              Useful when e.g. spectral indices in models have different names but you wish to compare them. Format is
              {'old label': 'new label'}
-            **kwargs: chainconsumer general keyword arguments
+        :param kwargs: chain consumer kwargs
+        :return:
 
         Returns:
 
         """
 
-        if not has_chainconsumer:
-            RuntimeError("You must have chainconsumer installed to use this function")
+
 
         if self.samples is not None:
-            assert len(self._free_parameters.keys()) == self.raw_samples[0].shape[0], ("Mismatch between sample"
+            return self._results.comparison_corner_plot(self, *other_fits, **kwargs)
+
+        else:
+
+            raise RuntimeError("You have to run the sampler first, using the sample() method")
 
 
-
-                                                                                       " dimensions and number of free"
-                                                                                       " parameters")
-
-        if other_fit.samples is not None:
-            assert len(other_fit._free_parameters.keys()) == other_fit.raw_samples[0].shape[0], (
-                "Mismatch between sample"
-
-
-
-                " dimensions and number of free"
-                " parameters")
-
-        labels = []
-        priors = []
-
-        for i, (parameter_name, parameter) in enumerate(self._free_parameters.iteritems()):
-            short_name = parameter_name.split(".")[-1]
-
-            labels.append(short_name)
-
-            priors.append(self._likelihood_model.parameters[parameter_name].prior)
-
-        labels_other = []
-        priors_other = []
-
-        for i, (parameter_name, parameter) in enumerate(other_fit._free_parameters.iteritems()):
-            short_name = parameter_name.split(".")[-1]
-
-            labels_other.append(short_name)
-
-            priors_other.append(other_fit._likelihood_model.parameters[parameter_name].prior)
-
-        # Rename any parameters so that they can be plotted together.
-        # A dictionary is passed with keys = old label values = new label.
-
-        if renamed_parameters is not None:
-
-            for old_label, new_label in renamed_parameters.iteritems():
-
-                for i, _ in enumerate(labels):
-
-                    if labels[i] == old_label:
-                        labels[i] = new_label
-
-                for i, _ in enumerate(labels_other):
-
-                    if labels_other[i] == old_label:
-                        labels_other[i] = new_label
-
-
-        # Must remove underscores!
-
-        for i, val, in enumerate(labels):
-
-            if '$' not in labels[i]:
-                labels[i] = val.replace('_', ' ')
-
-        cc = chainconsumer.ChainConsumer()
-
-        cc.add_chain(self.raw_samples, parameters=labels)
-
-        cc.add_chain(other_fit.raw_samples, parameters=labels_other)
-
-        cc.configure_contour(cloud=cloud, shade=shade, shade_alpha=shade_alpha, sigmas=sigmas)
-        cc.configure_general(**kwargs)
-        fig = cc.plot(parameters=parameters, figsize='PAGE')
-
-        return fig
 
     def plot_chains(self, thin=None):
         """
@@ -881,6 +784,14 @@ class BayesianAnalysis(object):
             figures.append(figure)
 
         return figures
+
+    @property
+    def data_list(self):
+        """
+        :return: data list for this analysis
+        """
+
+        return self._data_list
 
     def convergence_plots(self, n_samples_in_each_subset, n_subsets):
         """
@@ -953,7 +864,7 @@ class BayesianAnalysis(object):
 
         def plot_one_histogram(subplot, data, label):
 
-            nbins = self.freedman_diaconis_rule(data)
+            nbins = int(self.freedman_diaconis_rule(data))
 
             subplot.hist(data, nbins, label=label)
 
@@ -1009,8 +920,6 @@ class BayesianAnalysis(object):
 
             mean_par = np.median(self._samples[parameter_name])
             parameter.value = mean_par
-
-
 
     def _update_free_parameters(self):
         """
@@ -1079,8 +988,9 @@ class BayesianAnalysis(object):
             if self.verbose:
                 n_par = len(self._free_parameters)
 
-                print("Trial values %s gave a log_like of %s" % (map(lambda i: "%.2g" % trial_values[i], range(n_par)),
-                                                                 log_like))
+                print(
+                "Trial values %s gave a log_like of %s" % (map(lambda i: "%.2g" % trial_values[i], range(n_par)),
+                                                           log_like))
 
             return log_like
 
@@ -1160,7 +1070,7 @@ class BayesianAnalysis(object):
 
             # Loop over each dataset and get the likelihood values for each set
 
-            log_like_values = map(lambda dataset: dataset.get_log_like(), self.data_list.values())
+            log_like_values = map(lambda dataset: dataset.get_log_like(), self._data_list.values())
 
         except ModelAssertionViolation:
 
@@ -1181,7 +1091,8 @@ class BayesianAnalysis(object):
         if not np.isfinite(log_like):
             # Issue warning
 
-            custom_warnings.warn("Likelihood value is infinite for parameters %s" % trial_values, LikelihoodIsInfinite)
+            custom_warnings.warn("Likelihood value is infinite for parameters %s" % trial_values,
+                                 LikelihoodIsInfinite)
 
             return -np.inf
 

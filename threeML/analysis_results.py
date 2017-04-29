@@ -12,6 +12,20 @@ import astromodels
 from astromodels.core.my_yaml import my_yaml
 from astromodels.core.model_parser import ModelParser
 
+from corner import corner
+
+try:
+
+    import chainconsumer
+
+except:
+
+    has_chainconsumer = False
+
+else:
+
+    has_chainconsumer = True
+
 from threeML.exceptions.custom_exceptions import custom_warnings
 from threeML.io.file_utils import sanitize_filename
 from threeML.io.fits_file import fits, FITSFile, FITSExtension
@@ -21,6 +35,8 @@ from threeML.io.uncertainty_formatter import uncertainty_formatter
 from threeML.version import __version__
 from threeML.random_variates import RandomVariates
 from threeML.io.calculate_flux import _calculate_point_source_flux
+from threeML.utils.stats_tools import dic
+from threeML.config.config import threeML_config
 
 # These are special characters which cannot be safely saved in the keyword of a FITS file. We substitute
 # them with normal characters when we write the keyword, and we substitute them back when we read it back
@@ -75,6 +91,8 @@ def _load_one_results(fits_extension):
     # Gather statistics values
     statistic_values = collections.OrderedDict()
 
+    measure_values = collections.OrderedDict()
+
     for key in fits_extension.header.keys():
 
         if key.find("STAT") == 0:
@@ -86,6 +104,15 @@ def _load_one_results(fits_extension):
             name = fits_extension.header.get("PN%i" % id)
             statistic_values[name] = value
 
+        if key.find("MEAS") == 0:
+            # Found a keyword with a statistic for a plugin
+            # Gather info about it
+
+            id = int(key.replace("MEAS", ""))
+            name = fits_extension.header.get(key)
+            value = float(fits_extension.header.get("MV%i" % id))
+            measure_values[name] = value
+
     if analysis_type == "MLE":
 
         # Get covariance matrix
@@ -94,7 +121,7 @@ def _load_one_results(fits_extension):
 
         # Instance and return
 
-        return MLEResults(optimized_model, covariance_matrix, statistic_values)
+        return MLEResults(optimized_model, covariance_matrix, statistic_values, statistical_measures=measure_values)
 
     elif analysis_type == "Bayesian":
 
@@ -103,7 +130,7 @@ def _load_one_results(fits_extension):
 
         # Instance and return
 
-        return BayesianResults(optimized_model, samples.T, statistic_values)
+        return BayesianResults(optimized_model, samples.T, statistic_values, statistical_measures=measure_values)
 
 
 def _load_set_of_results(open_fits_file, n_results):
@@ -255,6 +282,15 @@ class ANALYSIS_RESULTS(FITSExtension):
             self.hdu.header.set("STAT%i" % i, stat_value, comment="Stat. value for plugin %i" % i)
             self.hdu.header.set("PN%i" % i, plugin_instance_name, comment="Name of plugin %i" % i)
 
+        # Now add the statistical measures
+
+        measure_series = analysis_results.statistical_measures # type: pd.Series
+
+        for i, (measure, measure_value) in enumerate(measure_series.iteritems()):
+            self.hdu.header.set("MEAS%i" % i, measure, comment="Measure type %i" % i)
+            self.hdu.header.set("MV%i" % i, measure_value, comment="Measure value %i" % i)
+
+
 
 class AnalysisResultsFITS(FITSFile):
     """
@@ -315,7 +351,7 @@ class _AnalysisResults(object):
     :type statistic_values: dict
     """
 
-    def __init__(self, optimized_model, samples, statistic_values, analysis_type):
+    def __init__(self, optimized_model, samples, statistic_values, analysis_type, statistical_measures):
 
         # Safety checks
 
@@ -337,6 +373,10 @@ class _AnalysisResults(object):
         # Store likelihood values in a pandas Series
 
         self._optimal_statistic_values = pd.Series(statistic_values)
+
+        # Store the statistical measures as a pandas Series
+
+        self._statistical_measures = pd.Series(statistical_measures)
 
         # The .free_parameters property of the model is pretty costly because it needs to update all the parameters
         # to see if they are free. Since the saved model will not be touched we can cache that
@@ -472,6 +512,11 @@ class _AnalysisResults(object):
 
         return self._optimal_statistic_values
 
+    @property
+    def statistical_measures(self):
+
+        return self._statistical_measures
+
     def _get_correlation_matrix(self, covariance):
         """
         Compute the correlation matrix
@@ -526,6 +571,18 @@ class _AnalysisResults(object):
         loglike_dataframe = pd.DataFrame(logl_results)
 
         return loglike_dataframe
+
+    def get_statistic_measure_frame(self):
+        """
+        Returns a panadas DataFrame with additional statistical information including
+        point and posterior based information criteria as well as their effective number
+        of free parameters. To use these properly, it is vital you consult the statsitical
+        literature.
+
+        :return: a pandas DataFrame instance
+        """
+
+        return self._statistical_measures.to_frame(name='statistical measures')
 
     def get_data_frame(self, error_type="equal tail", cl=0.68):
         """
@@ -618,7 +675,7 @@ class _AnalysisResults(object):
 
         return best_fit_table
 
-    def get_point_source_flux(self, ene_min, ene_max, sources = (), confidence_level=0.68,
+    def get_point_source_flux(self, ene_min, ene_max, sources=(), confidence_level=0.68,
                               flux_unit='erg/(s cm2)', use_components=False, components_to_use=(),
                               sum_sources=False):
         """
@@ -685,6 +742,7 @@ class _AnalysisResults(object):
             return bayes_results
 
 
+
 class BayesianResults(_AnalysisResults):
     """
     Store results of a Bayesian analysis (i.e., the samples) and allow for computation with them and "error propagation"
@@ -698,9 +756,10 @@ class BayesianResults(_AnalysisResults):
     :type posterior_values: dict
     """
 
-    def __init__(self, optimized_model, samples, posterior_values):
+    def __init__(self, optimized_model, samples, posterior_values, statistical_measures):
 
-        super(BayesianResults, self).__init__(optimized_model, samples, posterior_values, 'Bayesian')
+        super(BayesianResults, self).__init__(optimized_model, samples, posterior_values, 'Bayesian', statistical_measures)
+
 
     def get_correlation_matrix(self):
         """
@@ -742,6 +801,281 @@ class BayesianResults(_AnalysisResults):
 
         display(self.get_statistic_frame())
 
+        print("\nValues of statistical measures:\n")
+
+        display(self.get_statistic_measure_frame())
+
+    def corner_plot(self, renamed_parameters=None, **kwargs):
+        """
+        Produce the corner plot showing the marginal distributions in one and two directions.
+
+        :param renamed_parameters: a python dictionary of parameters to rename.
+             Useful when e.g. spectral indices in models have different names but you wish to compare them. Format is
+             {'old label': 'new label'}
+        :param kwargs: arguments to be passed to the corner function
+        :return: a matplotlib.figure instance
+        """
+
+        assert len(self._free_parameters.keys()) == self._samples_transposed.T[0].shape[0], ("Mismatch between sample"
+                                                                                             " dimensions and number of free"
+                                                                                             " parameters")
+
+        labels = []
+        priors = []
+
+        for i, (parameter_name, parameter) in enumerate(self._free_parameters.iteritems()):
+            short_name = parameter_name.split(".")[-1]
+
+            labels.append(short_name)
+
+            priors.append(self._optimized_model.parameters[parameter_name].prior)
+
+        # Rename the parameters if needed.
+
+        if renamed_parameters is not None:
+
+            for old_label, new_label in renamed_parameters.iteritems():
+
+                for i, _ in enumerate(labels):
+
+                    if labels[i] == old_label:
+                        labels[i] = new_label
+
+        # default arguments
+        default_args = {'show_titles': True, 'title_fmt': ".2g", 'labels': labels,
+                        'quantiles': [0.16, 0.50, 0.84]}
+
+        # Update the default arguents with the one provided (if any). Note that .update also adds new keywords,
+        # if they weren't present in the original dictionary, so you can use any option in kwargs, not just
+        # the one in default_args
+        default_args.update(kwargs)
+
+        fig = corner(self._samples_transposed.T, **default_args)
+
+        return fig
+
+    def corner_plot_cc(self, parameters=None, renamed_parameters=None, **cc_kwargs):
+        """
+        Corner plots using chainconsumer which allows for nicer plotting of
+        marginals
+        see: https://samreay.github.io/ChainConsumer/chain_api.html#chainconsumer.ChainConsumer.configure
+        for all options
+        :param parameters: list of parameters to plot
+        :param renamed_parameters: a python dictionary of parameters to rename.
+             Useful when e.g. spectral indices in models have different names but you wish to compare them. Format is
+             {'old label': 'new label'}
+        :param **cc_kwargs: chainconsumer general keyword arguments
+        :return fig:
+        """
+
+
+        if not has_chainconsumer:
+            RuntimeError("You must have chainconsumer installed to use this function: pip install chainconsumer")
+
+        # these are the keywords for the plot command
+
+        _default_plot_args = {'truth': None,
+                              'figsize': 'GROW',
+                              'filename': None,
+                              'display': False,
+                              'legend': None}
+        keys = cc_kwargs.keys()
+        for key in keys:
+
+            if key in _default_plot_args:
+                _default_plot_args[key] = cc_kwargs.pop(key)
+
+        labels = []
+        priors = []
+
+        for i, (parameter_name, parameter) in enumerate(self._free_parameters.iteritems()):
+            short_name = parameter_name.split(".")[-1]
+
+            labels.append(short_name)
+
+            priors.append(self._optimized_model.parameters[parameter_name].prior)
+
+        # Rename the parameters if needed.
+
+        if renamed_parameters is not None:
+
+            for old_label, new_label in renamed_parameters.iteritems():
+
+                for i, _ in enumerate(labels):
+
+                    if labels[i] == old_label:
+                        labels[i] = new_label
+
+        # Must remove underscores!
+
+        for i, val, in enumerate(labels):
+
+            if '$' not in labels[i]:
+                labels[i] = val.replace('_', '')
+
+        cc = chainconsumer.ChainConsumer()
+
+        cc.add_chain(self._samples_transposed.T, parameters=labels)
+
+        if not cc_kwargs:
+            cc_kwargs = threeML_config['bayesian']['chain consumer style']
+
+        cc.configure(**cc_kwargs)
+        fig = cc.plot(parameters=parameters, **_default_plot_args)
+
+        return fig
+
+    def comparison_corner_plot(self, *other_fits, **kwargs):
+        """
+        Create a corner plot from many different fits which allow for co-plotting of parameters marginals.
+
+        :param other_fits: other fitted results
+        :param parameters: parameters to plot
+        :param renamed_parameters: a python dictionary of parameters to rename.
+             Useful when e.g. spectral indices in models have different names but you wish to compare them. Format is
+             {'old label': 'new label'}
+        :param names: (optional) name for each chain first name is this chain followed by each added chain
+        :param kwargs: chain consumer kwargs
+        :return:
+
+        Returns:
+
+        """
+
+
+        if not has_chainconsumer:
+            RuntimeError("You must have chainconsumer installed to use this function")
+
+        cc = chainconsumer.ChainConsumer()
+
+        # these are the keywords for the plot command
+
+        _default_plot_args = {'truth': None,
+                              'figsize': 'GROW',
+                              'parameters': None,
+                              'filename': None,
+                              'display': False,
+                              'legend': None}
+
+        keys = kwargs.keys()
+
+        for key in keys:
+
+            if key in _default_plot_args:
+                _default_plot_args[key] = kwargs.pop(key)
+
+        # allows us to name chains
+
+        if 'names' in kwargs:
+
+            names = kwargs.pop('names')
+
+            assert len(names) == len(other_fits) + 1, 'you have %d chains but %d names' % (
+                len(other_fits) + 1, len(names))
+
+        else:
+
+            names = None
+
+        if 'renamed_parameters' in kwargs:
+
+            renamed_parameters = kwargs.pop('renamed_parameters')
+
+        else:
+
+            renamed_parameters = None
+
+        for j, other_fit in enumerate(other_fits):
+
+            if other_fit.samples is not None:
+                assert len(other_fit._free_parameters.keys()) == other_fit.samples.T[0].shape[0], (
+                    "Mismatch between sample"
+
+
+
+                    " dimensions and number of free"
+                    " parameters")
+
+            labels_other = []
+            # priors_other = []
+
+            for i, (parameter_name, parameter) in enumerate(other_fit._free_parameters.iteritems()):
+                short_name = parameter_name.split(".")[-1]
+
+                labels_other.append(short_name)
+
+                # priors_other.append(other_fit._likelihood_model.parameters[parameter_name].prior)
+
+            # Rename any parameters so that they can be plotted together.
+            # A dictionary is passed with keys = old label values = new label.
+
+            if renamed_parameters is not None:
+
+                for old_label, new_label in renamed_parameters.iteritems():
+
+                    for i, _ in enumerate(labels_other):
+
+                        if labels_other[i] == old_label:
+                            labels_other[i] = new_label
+
+            # Must remove underscores!
+
+            for i, val, in enumerate(labels_other):
+
+                if '$' not in labels_other[i]:
+                    labels_other[i] = val.replace('_', ' ')
+
+            if names is not None:
+
+                cc.add_chain(other_fit.samples.T, parameters=labels_other, name=names[j + 1])
+
+            else:
+
+                cc.add_chain(other_fit.samples.T, parameters=labels_other)
+
+        labels = []
+        # priors = []
+
+        for i, (parameter_name, parameter) in enumerate(self._free_parameters.iteritems()):
+            short_name = parameter_name.split(".")[-1]
+
+            labels.append(short_name)
+
+            # priors.append(self._optimized_model.parameters[parameter_name].prior)
+
+        if renamed_parameters is not None:
+
+            for old_label, new_label in renamed_parameters.iteritems():
+
+                for i, _ in enumerate(labels):
+
+                    if labels[i] == old_label:
+                        labels[i] = new_label
+
+        # Must remove underscores!
+
+        for i, val, in enumerate(labels):
+
+            if '$' not in labels[i]:
+                labels[i] = val.replace('_', ' ')
+
+        if names is not None:
+
+            cc.add_chain(self._samples_transposed.T, parameters=labels, name=names[0])
+
+        else:
+
+            cc.add_chain(self._samples_transposed.T, parameters=labels)
+
+        # should only be the cc kwargs
+
+        cc.configure(**kwargs)
+        fig = cc.plot(**_default_plot_args)
+
+        return fig
+
+
+
 
 class MLEResults(_AnalysisResults):
     """
@@ -759,7 +1093,7 @@ class MLEResults(_AnalysisResults):
     :return: an _AnalysisResults instance
     """
 
-    def __init__(self, optimized_model, covariance_matrix, likelihood_values, n_samples=5000):
+    def __init__(self, optimized_model, covariance_matrix, likelihood_values, n_samples=5000, statistical_measures=None):
 
         # Generate samples for each parameter accounting for their covariance
 
@@ -829,7 +1163,7 @@ class MLEResults(_AnalysisResults):
 
         # Finally build the class
 
-        super(MLEResults, self).__init__(optimized_model, samples, likelihood_values, "MLE")
+        super(MLEResults, self).__init__(optimized_model, samples, likelihood_values, "MLE", statistical_measures)
 
         # Store the covariance matrix
 
@@ -914,6 +1248,10 @@ class MLEResults(_AnalysisResults):
         print("\nValues of -log(likelihood) at the minimum:\n")
 
         display(self.get_statistic_frame())
+
+        print("\nValues of statistical measures:\n")
+
+        display(self.get_statistic_measure_frame())
 
 
 class AnalysisResultsSet(collections.Sequence):
